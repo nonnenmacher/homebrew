@@ -2,8 +2,13 @@ require 'cmd/tap'
 require 'cmd/untap'
 
 module Homebrew extend self
-
   def update
+    unless ARGV.named.empty?
+      abort <<-EOS.undent
+        This command updates brew itself, and does not take formula names.
+        Use `brew upgrade <formula>`.
+      EOS
+    end
     abort "Please `brew install git' first." unless which "git"
 
     # ensure GIT_CONFIG is unset as we need to operate on .git/config
@@ -17,7 +22,6 @@ module Homebrew extend self
     master_updater.pull!
     report.merge!(master_updater.report)
 
-    new_files = []
     Dir["Library/Taps/*"].each do |tapd|
       next unless File.directory?(tapd)
 
@@ -142,9 +146,22 @@ class Report < Hash
   def tapped_formula_for key
     fetch(key, []).map do |path|
       case path when %r{^Library/Taps/(\w+-\w+/.*)}
-        Pathname.new($1)
+        relative_path = $1
+        if valid_formula_location?(relative_path)
+          Pathname.new(relative_path)
+        end
       end
     end.compact
+  end
+
+  def valid_formula_location?(relative_path)
+    ruby_file = /\A.*\.rb\Z/
+    parts = relative_path.split('/')[1..-1]
+    [
+      parts.length == 1 && parts.first =~ ruby_file,
+      parts.length == 2 && parts.first == 'Formula' && parts.last =~ ruby_file,
+      parts.length == 2 && parts.first == 'HomebrewFormula' && parts.last =~ ruby_file,
+    ].any?
   end
 
   def new_tapped_formula
@@ -169,7 +186,7 @@ class Report < Hash
     formula = select_formula(key)
     unless formula.empty?
       ohai title
-      puts_columns formula
+      puts_columns formula.uniq
     end
   end
 

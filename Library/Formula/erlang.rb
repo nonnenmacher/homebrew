@@ -1,42 +1,46 @@
 require 'formula'
 
 class ErlangManuals < Formula
-  url 'http://erlang.org/download/otp_doc_man_R15B02.tar.gz'
-  sha1 'e50cc887b36b0b2f158a87fa5b21cb2b2c6679b0'
+  url 'http://erlang.org/download/otp_doc_man_R16B01.tar.gz'
+  sha1 '57ef01620386108db83ef13921313e600d351d44'
 end
 
 class ErlangHtmls < Formula
-  url 'http://erlang.org/download/otp_doc_html_R15B02.tar.gz'
-  sha1 'b2ef425fe5aa9f4fff7afaa9b8204c45357eaa89'
+  url 'http://erlang.org/download/otp_doc_html_R16B01.tar.gz'
+  sha1 '6741e15e0b3e58736987e38fb8803084078ff99f'
 end
 
 class ErlangHeadManuals < Formula
-  url 'http://erlang.org/download/otp_doc_man_R15B02.tar.gz'
-  sha1 'e50cc887b36b0b2f158a87fa5b21cb2b2c6679b0'
+  url 'http://erlang.org/download/otp_doc_man_R16B01.tar.gz'
+  sha1 '57ef01620386108db83ef13921313e600d351d44'
 end
 
 class ErlangHeadHtmls < Formula
-  url 'http://erlang.org/download/otp_doc_html_R15B02.tar.gz'
-  sha1 'b2ef425fe5aa9f4fff7afaa9b8204c45357eaa89'
+  url 'http://erlang.org/download/otp_doc_html_R16B01.tar.gz'
+  sha1 '6741e15e0b3e58736987e38fb8803084078ff99f'
 end
 
+# Major releases of erlang should typically start out as separate formula in
+# Homebrew-versions, and only be merged to master when things like couchdb and
+# elixir are compatible.
 class Erlang < Formula
   homepage 'http://www.erlang.org'
   # Download tarball from GitHub; it is served faster than the official tarball.
-  url 'https://github.com/erlang/otp/tarball/OTP_R15B02'
-  sha1 '540d0d0a006082a8bc3e1fc239f2043fee015967'
+  url 'https://github.com/erlang/otp/archive/OTP_R16B01.tar.gz'
+  sha1 'ddbff080ee39c50b86b847514c641f0a9aab0333'
 
-  head 'https://github.com/erlang/otp.git', :branch => 'dev'
+  head 'https://github.com/erlang/otp.git', :branch => 'master'
 
   bottle do
-    sha1 '94cbe622b817e8a5bd7797b615aad5e47c5d8660' => :mountainlion
-    sha1 'ec5b4749668c95ad55410c0316390046ee576895' => :lion
-    sha1 '10b0aa609354c07938ac936578c9d1f12a4249ba' => :snowleopard
+    sha1 'febb0a5d56258dabd3ccdca22cc3eaa60b16fbf1' => :mountain_lion
+    sha1 '2d1456b7e28942d08f78952993d31219206bc08a' => :lion
+    sha1 '222b389b09cf290ea07a5600d94c08fa7a1fcc01' => :snow_leopard
   end
 
-  # remove the autoreconf if possible
   depends_on :automake
   depends_on :libtool
+  depends_on 'unixodbc' if MacOS.version >= :mavericks
+  depends_on 'fop' => :optional # enables building PDF docs
 
   fails_with :llvm do
     build 2334
@@ -55,6 +59,7 @@ class Erlang < Formula
       ENV.remove_from_cflags /-O./
       ENV.append_to_cflags '-O0'
     end
+    ENV.append "FOP", "#{HOMEBREW_PREFIX}/bin/fop" if build.with? 'fop'
 
     # Do this if building from a checkout to generate configure
     system "./otp_build autoconf" if File.exist? "otp_build"
@@ -67,7 +72,7 @@ class Erlang < Formula
             "--enable-shared-zlib",
             "--enable-smp-support"]
 
-    args << "--with-dynamic-trace=dtrace" unless MacOS.version == :leopard
+    args << "--with-dynamic-trace=dtrace" unless MacOS.version <= :leopard or not MacOS::CLT.installed?
 
     unless build.include? 'disable-hipe'
       # HIPE doesn't strike me as that reliable on OS X
@@ -82,13 +87,17 @@ class Erlang < Formula
     end
 
     system "./configure", *args
-    touch 'lib/wx/SKIP' if MacOS.version >= :snow_leopard
     system "make"
+    ENV.j1 # Install is not thread-safe; can try to create folder twice and fail
     system "make install"
 
     unless build.include? 'no-docs'
       manuals = build.head? ? ErlangHeadManuals : ErlangManuals
-      manuals.new.brew { man.install Dir['man/*'] }
+      manuals.new.brew {
+        man.install Dir['man/*']
+        # erl -man expects man pages in lib/erlang/man
+        (lib+'erlang').install_symlink man
+      }
 
       htmls = build.head? ? ErlangHeadHtmls : ErlangHtmls
       htmls.new.brew { doc.install Dir['*'] }
@@ -99,9 +108,9 @@ class Erlang < Formula
     `#{bin}/erl -noshell -eval 'crypto:start().' -s init stop`
 
     # This test takes some time to run, but per bug #120 should finish in
-    # "less than 20 minutes". It takes a few minutes on a Mac Pro (2009).
-    if build.include? "time"
-      `#{bin}/dialyzer --build_plt -r #{lib}/erlang/lib/kernel-2.15/ebin/`
+    # "less than 20 minutes". It takes about 20 seconds on a Mac Pro (2009).
+    if build.include?("time") && !build.head?
+      `#{bin}/dialyzer --build_plt -r #{lib}/erlang/lib/kernel-2.16.2/ebin/`
     end
   end
 end

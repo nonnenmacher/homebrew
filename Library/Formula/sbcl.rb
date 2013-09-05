@@ -1,21 +1,22 @@
 require 'formula'
 
 class SbclBootstrapBinaries < Formula
-  url 'http://downloads.sourceforge.net/project/sbcl/sbcl/1.0.55/sbcl-1.0.55-x86-darwin-binary.tar.bz2'
-  sha1 '8ea71938c40a6dccfe2d43a86e9b115f4428a218'
-  version "1.0.55"
+  url 'http://downloads.sourceforge.net/project/sbcl/sbcl/1.1.0/sbcl-1.1.0-x86-64-darwin-binary.tar.bz2'
+  sha1 'ed2069e124027c43926728c48d604efbb4e33950'
+  version "1.1.0"
 end
 
 class Sbcl < Formula
   homepage 'http://www.sbcl.org/'
-  url 'http://downloads.sourceforge.net/project/sbcl/sbcl/1.1.1/sbcl-1.1.1-source.tar.bz2'
-  sha1 '87e8c37a2811e10d044074ec8bfc79918c66f2d8'
+  url 'http://downloads.sourceforge.net/project/sbcl/sbcl/1.1.11/sbcl-1.1.11-source.tar.bz2'
+  sha1 '6c6e5366cf3de088c1ee2903de4c250af43c49d5'
 
   head 'git://sbcl.git.sourceforge.net/gitroot/sbcl/sbcl.git'
 
   bottle do
-    url 'https://downloads.sf.net/project/machomebrew/Bottles/sbcl-1.0.55-bottle.tar.gz'
-    sha1 '3c13225c8fe3eabf54e9d368e6b74318a5546430'
+    sha1 'ce4c2d31115b6daac9665754826c410d05a68ab4' => :mountain_lion
+    sha1 '7c2fe7e01cdf42dbd6c295622d861730615c6eed' => :lion
+    sha1 'ed81454325e6b318b5ef0d60bf11a5aaea7eb51c' => :snow_leopard
   end
 
   fails_with :llvm do
@@ -58,7 +59,7 @@ class Sbcl < Formula
     # Remove non-ASCII values from environment as they cause build failures
     # More information: http://bugs.gentoo.org/show_bug.cgi?id=174702
     ENV.delete_if do |key, value|
-      value =~ /[\x80-\xff]/
+      value =~ /[\x80-\xff]/n
     end
 
     SbclBootstrapBinaries.new.brew do
@@ -75,5 +76,9 @@ class Sbcl < Formula
 
     ENV['INSTALL_ROOT'] = prefix
     system "sh install.sh"
+  end
+
+  test do
+    system "#{bin}/sbcl", "--version"
   end
 end

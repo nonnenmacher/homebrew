@@ -6,13 +6,13 @@ class Aplus < Formula
   mirror 'http://ftp.us.debian.org/debian/pool/main/a/aplus-fsf/aplus-fsf_4.22.1.orig.tar.gz'
   sha1 'e757cc7654cf35dba15a6a5d6cac5320146558fc'
 
+  depends_on :automake
+  depends_on :libtool
+
   # Fix the missing CoreServices include (via Fink version of aplus)
   def patches
     DATA
   end
-
-  depends_on :automake
-  depends_on :libtool
 
   def install
     # replace placeholder w/ actual prefix
@@ -31,13 +31,10 @@ class Aplus < Formula
     system "make", "install"
   end
 
-  def caveats
-    return <<-EOS.undent
+  def caveats; <<-EOS.undent
     This package contains a custom APL font; it doesn't display APL characters
     using the usual Unicode codepoints.  Install it by running
-
-    open #{prefix}/fonts/TrueType/KAPL.TTF
-
+      open #{opt_prefix}/fonts/TrueType/KAPL.TTF
     and clicking on the "Install Font" button.
     EOS
   end

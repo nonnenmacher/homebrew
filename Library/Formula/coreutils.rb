@@ -2,14 +2,16 @@ require 'formula'
 
 class Coreutils < Formula
   homepage 'http://www.gnu.org/software/coreutils'
-  url 'http://ftpmirror.gnu.org/coreutils/coreutils-8.19.tar.xz'
-  mirror 'http://ftp.gnu.org/gnu/coreutils/coreutils-8.19.tar.xz'
-  sha256 'ad3873183fd8cfc7672b3ba54644672e59352f9b2dc7e3ad251c1174dde8a9e7'
+  url 'http://ftpmirror.gnu.org/coreutils/coreutils-8.21.tar.xz'
+  mirror 'http://ftp.gnu.org/gnu/coreutils/coreutils-8.21.tar.xz'
+  sha256 'adaa44bdab3fa5eb352e80d8a31fdbf957b78653d0c2cd30d63e161444288e18'
 
   depends_on 'xz' => :build
 
   def install
-    system "./configure", "--prefix=#{prefix}", "--program-prefix=g"
+    system "./configure", "--prefix=#{prefix}",
+                          "--program-prefix=g",
+                          "--without-gmp"
     system "make install"
 
     # Symlink all commands into libexec/gnubin without the 'g' prefix
@@ -28,12 +30,12 @@ class Coreutils < Formula
     If you really need to use these commands with their normal names, you
     can add a "gnubin" directory to your PATH from your bashrc like:
 
-        PATH="$(brew --prefix coreutils)/libexec/gnubin:$PATH"
+        PATH="#{opt_prefix}/libexec/gnubin:$PATH"
 
     Additionally, you can access their man pages with normal names if you add
     the "gnuman" directory to your MANPATH from your bashrc as well:
 
-        MANPATH="$(brew --prefix coreutils)/libexec/gnuman:$MANPATH"
+        MANPATH="#{opt_prefix}/libexec/gnuman:$MANPATH"
 
     EOS
   end

@@ -6,8 +6,8 @@ class TidypManual < Formula
 end
 
 class Tidyp < Formula
-  url 'https://github.com/downloads/petdance/tidyp/tidyp-1.04.tar.gz'
   homepage 'http://tidyp.com/'
+  url 'https://github.com/downloads/petdance/tidyp/tidyp-1.04.tar.gz'
   sha1 '5d9050512259c3a67a2f48469555932e3a7b8bd0'
 
   def install
@@ -19,8 +19,8 @@ class Tidyp < Formula
     TidypManual.new.brew do
       system "#{bin}/tidyp -xml-help > tidyp1.xml"
       system "#{bin}/tidyp -xml-config > tidyp-config.xml"
-      system "/usr/bin/xsltproc tidyp1.xsl tidyp1.xml |/usr/bin/gzip >tidyp.1.gz"
-      man1.install 'tidyp.1.gz'
+      system "/usr/bin/xsltproc tidyp1.xsl tidyp1.xml > tidyp.1"
+      man1.install gzip('tidyp.1')
     end
   end
 end

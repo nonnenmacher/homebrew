@@ -1,36 +1,13 @@
 require 'formula'
 
-class ErlangInstalled < Requirement
-  def message; <<-EOS.undent
-    Erlang is required to install.
-
-    You can install this with:
-      brew install erlang
-
-    Or you can use an official installer from:
-      http://www.erlang.org/
-    EOS
-  end
-
-  def satisfied?
-    which 'erl'
-  end
-
-  def fatal?
-    true
-  end
-end
-
 class Elixir < Formula
   homepage 'http://elixir-lang.org/'
-  url  'https://github.com/elixir-lang/elixir/tarball/v0.7.0'
-  sha1 '6a562fc4259c6ba06502274e7022e79a927fbf38'
+  url  'https://github.com/elixir-lang/elixir/archive/v0.10.2.tar.gz'
+  sha1 'fd12cfc3d7ebba9087ea1d13de6ad940c644ecf1'
 
-  head 'https://github.com/elixir-lang/elixir.git', :branch => 'stable'
+  head 'https://github.com/elixir-lang/elixir.git'
 
-  depends_on ErlangInstalled.new
-
-  env :userpaths
+  depends_on 'erlang'
 
   def install
     system "make"
@@ -42,7 +19,7 @@ class Elixir < Formula
     end
   end
 
-  def test
-    system "#{bin}/elixir -v"
+  test do
+    system "#{bin}/elixir", "-v"
   end
 end

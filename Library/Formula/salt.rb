@@ -73,7 +73,7 @@ class Salt < Formula
   url 'http://supernovae.in2p3.fr/~guy/salt/download/snfit-2.2.2b.tar.gz'
   sha1 'e435ca19d22800f95f5363038297593ec4dae97f'
 
-  option 'with-data', 'Install model data'
+  depends_on :fortran
 
   def install_subbrew(subbrew, installdir)
     s = subbrew.new
@@ -94,7 +94,6 @@ class Salt < Formula
 
   def install
     ENV.deparallelize
-    ENV.fortran
     # the libgfortran.a path needs to be set explicitly
     # for the --enable-gfortran option to work
     libgfortran = `$FC --print-file-name libgfortran.a`.chomp
@@ -104,44 +103,38 @@ class Salt < Formula
 
     # install all the model data
     # http://supernovae.in2p3.fr/~guy/salt/download/snls3-intallation.sh
-    if build.include? 'with-data'
-      data = prefix/'data'
-      data.mkpath
-      File.open(data/'fitmodel.card', 'w') do |fitmodel|
-        # salt2 model + magsys
-        [SaltSALT2, SaltVEGA, SaltSDSS_AB_off, SaltVEGAHST].each do |cls|
-          fitmodel.write(install_subbrew(cls, data))
-        end
-        # instruments
-        inst = data + 'Instruments'
-        [SaltSTANDARD, SaltMEGACAM, SaltKEPLERCAM, Salt4SHOOTER2, SaltSDSS,
-         SaltSWOPE, SaltACSWF, SaltNICMOS2].each do |cls|
-          fitmodel.write(install_subbrew(cls, inst))
-        end
+    data = prefix/'data'
+    data.mkpath
+    File.open(data/'fitmodel.card', 'w') do |fitmodel|
+      # salt2 model + magsys
+      [SaltSALT2, SaltVEGA, SaltSDSS_AB_off, SaltVEGAHST].each do |cls|
+        fitmodel.write(install_subbrew(cls, data))
       end
-
-      # for testing
-      Salt04D3gx.new.brew { (prefix + '04D3gx').install Dir['*'] }
+      # instruments
+      inst = data + 'Instruments'
+      [SaltSTANDARD, SaltMEGACAM, SaltKEPLERCAM, Salt4SHOOTER2, SaltSDSS,
+       SaltSWOPE, SaltACSWF, SaltNICMOS2].each do |cls|
+        fitmodel.write(install_subbrew(cls, inst))
+      end
     end
+
+    # for testing
+    Salt04D3gx.new.brew { (prefix + '04D3gx').install Dir['*'] }
   end
 
-  def test
-    mktemp do
-      ENV['PATHMODEL'] = "#{prefix}/data"
-      cp_r Dir[prefix + '04D3gx' + '*'], '.'
-      # I don't know why I need to redo the cd on the shell, but it doesn't work otherwise
-      system "cd #{Dir.pwd}; #{bin}/snfit lc2fit_g.dat lc2fit_r.dat lc2fit_i.dat lc2fit_z.dat"
-      system "cat result_salt2.dat result_salt2_SNLS3.dat"
-    end
+  test do
+    ENV['PATHMODEL'] = "#{prefix}/data"
+    cp_r Dir[prefix + '04D3gx' + '*'], '.'
+    # I don't know why I need to redo the cd on the shell, but it doesn't work otherwise
+    system "cd #{Dir.pwd}; #{bin}/snfit lc2fit_g.dat lc2fit_r.dat lc2fit_i.dat lc2fit_z.dat"
+    system "cat result_salt2.dat result_salt2_SNLS3.dat"
   end
 
   def caveats
-    if build.include? 'with-data'
-      <<-EOS.undent
-      You should add the following to your .bashrc or equivalent:
-        export PATHMODEL=#{prefix}/data
-      EOS
-    end
+    <<-EOS.undent
+    You should add the following to your .bashrc or equivalent:
+      export PATHMODEL=#{prefix}/data
+    EOS
   end
 
 end

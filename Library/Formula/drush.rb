@@ -2,13 +2,14 @@ require 'formula'
 
 class Drush < Formula
   homepage 'http://drupal.org/project/drush'
-  url 'http://ftp.drupal.org/files/projects/drush-7.x-5.7.tar.gz'
-  sha1 'a864ca746f13e539f86030262f943442c75f9c96'
-
-  head 'git://git.drupal.org/project/drush.git'
+  head 'https://github.com/drush-ops/drush.git'
+  url 'https://github.com/drush-ops/drush/archive/6.0.0.tar.gz'
+  sha1 'de8b4065f179f6ddfd9c8911c2f818f81ab1f4a4'
 
   def install
-    libexec.install Dir['*']
+    prefix.install_metafiles
+    libexec.install Dir['*'] -['drush.bat']
     bin.install_symlink libexec/'drush'
+    bash_completion.install libexec/'drush.complete.sh' => 'drush'
   end
 end

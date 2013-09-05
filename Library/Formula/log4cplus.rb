@@ -1,9 +1,9 @@
 require 'formula'
 
 class Log4cplus < Formula
-  url 'http://sourceforge.net/projects/log4cplus/files/log4cplus-stable/1.0.4/log4cplus-1.0.4.tar.bz2'
   homepage 'http://log4cplus.sourceforge.net/'
-  sha1 'b8ca1b01b23788ac04f25a7bdaaaca7e366c7312'
+  url 'http://downloads.sourceforge.net/project/log4cplus/log4cplus-stable/1.1.1/log4cplus-1.1.1.tar.bz2'
+  sha1 '3a86b2e124091c9345ee1bac81ca1fb3773fad60'
 
   def install
     system "./configure", "--disable-dependency-tracking",

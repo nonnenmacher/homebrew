@@ -1,22 +1,17 @@
 require 'formula'
 
-class Distribute < Formula
-  url 'http://pypi.python.org/packages/source/d/distribute/distribute-0.6.28.tar.gz'
-  sha1 '709bd97d46050d69865d4b588c7707768dfe6711'
+class Setuptools < Formula
+  url 'https://pypi.python.org/packages/source/s/setuptools/setuptools-1.1.tar.gz'
+  sha1 '0c789b38afa522605407515efb74a0278b867628'
 end
 
 class Pypy < Formula
   homepage 'http://pypy.org/'
+  url 'https://bitbucket.org/pypy/pypy/downloads/pypy-2.1-osx64.tar.bz2'
+  version '2.1.0'
+  sha1 '6cdaa1dc0a47d9eb6d816f7d394ca46f290a1ed5'
 
-  if MacOS.prefer_64_bit?
-    url 'https://bitbucket.org/pypy/pypy/downloads/pypy-1.9-osx64.tar.bz2'
-    version '1.9'
-    sha1 '825e15724419fbdb6fe215eeea044f9181883c90'
-  else
-    url 'http://pypy.org/download/pypy-1.4.1-osx.tar.bz2'
-    version '1.4.1'
-    sha1 '961470e7510c47b8f56e6cc6da180605ba058cb6'
-  end
+  depends_on :arch => :x86_64
 
   def install
     rmtree 'site-packages'
@@ -40,47 +35,43 @@ class Pypy < Formula
       install-scripts=#{scripts_folder}
     EOF
 
-    # Install distribute. The user can then do:
+    # Install setuptools. The user can then do:
     # $ easy_install pip
-    # $ pip install --upgrade distribute
-    # to get newer versions of distribute outside of Homebrew.
-    Distribute.new.brew do
+    # $ pip install --upgrade setuptools
+    # to get newer versions of setuptools outside of Homebrew.
+    Setuptools.new.brew do
       system "#{bin}/pypy", "setup.py", "install"
+    end
 
-      # Symlink to easy_install_pypy.
-      unless (scripts_folder+'easy_install_pypy').exist?
-        ln_s "#{scripts_folder}/easy_install", "#{scripts_folder}/easy_install_pypy"
-      end
+    # Symlink to easy_install_pypy.
+    unless (scripts_folder+'easy_install_pypy').exist?
+      ln_s "#{scripts_folder}/easy_install", "#{scripts_folder}/easy_install_pypy"
+    end
+
+    # Symlink to pip_pypy.
+    unless (scripts_folder+'pip_pypy').exist?
+      ln_s "#{scripts_folder}/pip", "#{scripts_folder}/pip_pypy"
     end
   end
 
-  def caveats
-    message = <<-EOS.undent
+  def caveats; <<-EOS.undent
     A "distutils.cfg" has been written to:
       #{distutils}
     specifing the install-scripts folder as:
       #{scripts_folder}
 
-    If you install Python packages via "pypy setup.py install", easy_install, pip,
-    any provided scripts will go into the install-scripts folder above, so you may
-    want to add it to your PATH.
+    If you install Python packages via "pypy setup.py install", easy_install_pypy,
+    pip_pypy, any provided scripts will go into the install-scripts folder above,
+    so you may want to add it to your PATH *after* the `$(brew --prefix)/bin`
+    so you don't overwrite tools from CPython.
 
-    Distribute has been installed, so easy_install is available.
-    To update distribute itself outside of Homebrew:
+    Setuptools has been installed, so easy_install is available.
+    To update setuptools itself outside of Homebrew:
         #{scripts_folder}/easy_install pip
-        #{scripts_folder}/pip install --upgrade distribute
+        #{scripts_folder}/pip install --upgrade setuptools
 
     See: https://github.com/mxcl/homebrew/wiki/Homebrew-and-Python
     EOS
-
-    unless MacOS.prefer_64_bit?
-      message += "\n" + <<-EOS.undent
-      Outdated PyPy 1.4.1 is the last version with official 32-bit Mac binary.
-      Consider to build modern version yourself: http://pypy.org/download.html#building-from-source
-      EOS
-    end
-
-    return message
   end
 
   # The HOMEBREW_PREFIX location of site-packages
@@ -88,17 +79,13 @@ class Pypy < Formula
     HOMEBREW_PREFIX+"lib/pypy/site-packages"
   end
 
-  # Where distribute will install executable scripts
+  # Where setuptools will install executable scripts
   def scripts_folder
     HOMEBREW_PREFIX+"share/pypy"
   end
 
   # The Cellar location of distutils
   def distutils
-    if MacOS.prefer_64_bit?
-      prefix+"lib-python/2.7/distutils"
-    else
-      prefix+"lib-python/modified-2.5.2/distutils"
-    end
+    prefix+"lib-python/2.7/distutils"
   end
 end

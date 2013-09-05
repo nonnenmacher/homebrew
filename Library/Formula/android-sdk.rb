@@ -8,9 +8,9 @@ end
 
 class AndroidSdk < Formula
   homepage 'http://developer.android.com/index.html'
-  url 'http://dl.google.com/android/android-sdk_r20.0.3-macosx.zip'
-  version 'r20.0.3'
-  sha1 'c02403c2e29952e6bbd632767b5c3cd3618c3e80'
+  url 'http://dl.google.com/android/android-sdk_r22.0.5-macosx.zip'
+  version '22.0.5'
+  sha1 'a4585d7e87a61a2a8cfd29a45514292f686e5281'
 
   # TODO docs and platform-tools
   # See the long comment below for the associated problems
@@ -21,8 +21,7 @@ class AndroidSdk < Formula
   skip_clean var_dirs
 
   def install
-    mv 'SDK Readme.txt', prefix/'README'
-    mv 'tools', prefix
+    prefix.install 'tools', 'SDK Readme.txt' => 'README'
 
     %w[android apkbuilder ddms dmtracedump draw9patch etc1tool emulator
     emulator-arm emulator-x86 hierarchyviewer hprof-conv lint mksdcard
@@ -43,7 +42,7 @@ class AndroidSdk < Formula
       dst.make_relative_symlink src
     end
 
-    %w[aapt adb aidl dexdump dx fastboot llvm-rs-cc].each do |platform_tool|
+    %w[adb fastboot].each do |platform_tool|
       (bin/platform_tool).write <<-EOS.undent
         #!/bin/sh
         PLATFORM_TOOL="#{prefix}/platform-tools/#{platform_tool}"
@@ -52,8 +51,17 @@ class AndroidSdk < Formula
       EOS
     end
 
+    %w[aapt aidl dexdump dx llvm-rs-cc].each do |build_tool|
+      (bin/build_tool).write <<-EOS.undent
+        #!/bin/sh
+        BUILD_TOOL="#{prefix}/build-tools/17.0.0/#{build_tool}"
+        test -f "$BUILD_TOOL" && exec "$BUILD_TOOL" "$@"
+        echo Use the \\`android\\' tool to install the \\"Android SDK Build-tools\\".
+      EOS
+    end
+
     AdbBashCompletion.new.brew do
-      (prefix+'etc/bash_completion.d').install 'adb.bash' => 'adb-completion.bash'
+      bash_completion.install 'adb.bash' => 'adb-completion.bash'
     end
   end
 
@@ -67,7 +75,7 @@ class AndroidSdk < Formula
     updates. If you want to try and fix this then see the comment in this formula.
 
     You may need to add the following to your .bashrc:
-      export ANDROID_SDK_ROOT=#{prefix}
+      export ANDROID_HOME=#{opt_prefix}
     EOS
   end
 

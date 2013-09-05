@@ -1,21 +1,12 @@
 require 'formula'
 
-def ghostscript_srsly?
-  build.include? 'with-ghostscript'
-end
-
-def ghostscript_fonts?
-  File.directory? "#{HOMEBREW_PREFIX}/share/ghostscript/fonts"
-end
-
 class Graphicsmagick < Formula
   homepage 'http://www.graphicsmagick.org/'
-  url 'http://downloads.sourceforge.net/project/graphicsmagick/graphicsmagick/1.3.17/GraphicsMagick-1.3.17.tar.bz2'
-  sha256 'cb4e29543b2912657207016ad4c7a081a96b0e4a4d84520bd74d242b3d9a6a7e'
+  url 'http://downloads.sourceforge.net/project/graphicsmagick/graphicsmagick/1.3.18/GraphicsMagick-1.3.18.tar.bz2'
+  sha256 '768b89a685d29b0e463ade21bc0649f2727800ebc5a8e13fa6fc17ccb9da769b'
 
   head 'hg://http://graphicsmagick.hg.sourceforge.net:8000/hgroot/graphicsmagick/graphicsmagick'
 
-  option 'with-ghostscript', 'Compile against ghostscript (not recommended.)'
   option 'use-tiff', 'Compile with libtiff support.'
   option 'use-cms', 'Compile with little-cms support.'
   option 'use-jpeg2000', 'Compile with jasper support.'
@@ -27,23 +18,28 @@ class Graphicsmagick < Formula
   option 'with-x', 'Compile with X11 support.'
   option 'without-magick-plus-plus', "Don't build C++ library."
 
+  depends_on 'libtool' => :build
   depends_on 'jpeg' => :recommended
   depends_on :libpng
   depends_on :x11 if build.include? 'with-x'
 
-  depends_on 'ghostscript' => :optional if ghostscript_srsly?
+  depends_on 'ghostscript' => :optional
 
-  depends_on 'libtiff' => :optional if build.include? 'use-tiff'
-  depends_on 'little-cms2' => :optional if build.include? 'use-cms'
-  depends_on 'jasper' => :optional if build.include? 'use-jpeg2000'
-  depends_on 'libwmf' => :optional if build.include? 'use-wmf'
-  depends_on 'xz' => :optional if build.include? 'use-xz'
+  depends_on 'libtiff' if build.include? 'use-tiff'
+  depends_on 'little-cms2' if build.include? 'use-cms'
+  depends_on 'jasper' if build.include? 'use-jpeg2000'
+  depends_on 'libwmf' if build.include? 'use-wmf'
+  depends_on 'xz' if build.include? 'use-xz'
 
   fails_with :llvm do
     build 2335
   end
 
   skip_clean :la
+
+  def ghostscript_fonts?
+    File.directory? "#{HOMEBREW_PREFIX}/share/ghostscript/fonts"
+  end
 
   def install
     # versioned stuff in main tree is pointless for us
@@ -53,8 +49,8 @@ class Graphicsmagick < Formula
             "--prefix=#{prefix}",
             "--enable-shared", "--disable-static"]
     args << "--without-magick-plus-plus" if build.include? 'without-magick-plus-plus'
-    args << "--disable-openmp" if MacOS.version == :leopard or not ENV.compiler == :gcc # libgomp unavailable
-    args << "--with-gslib" if ghostscript_srsly?
+    args << "--disable-openmp" if MacOS.version <= :leopard or not ENV.compiler == :gcc # libgomp unavailable
+    args << "--with-gslib" if build.with? 'ghostscript'
     args << "--with-gs-font-dir=#{HOMEBREW_PREFIX}/share/ghostscript/fonts" \
               unless ghostscript_fonts?
 
@@ -74,7 +70,6 @@ class Graphicsmagick < Formula
   end
 
   def test
-    system "#{bin}/gm", "identify", \
-      "/System/Library/Frameworks/SecurityInterface.framework/Versions/A/Resources/Key_Large.png"
+    system "#{bin}/gm", "identify", "/usr/share/doc/cups/images/cups.png"
   end
 end

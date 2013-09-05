@@ -2,12 +2,13 @@ require 'formula'
 
 class Root < Formula
   homepage 'http://root.cern.ch'
-  url 'ftp://root.cern.ch/root/root_v5.34.01.source.tar.gz'
-  version '5.34.01'
-  sha1 '6e0ed779568f1f9eb0f9af79bef26207444a4173'
+  url 'ftp://root.cern.ch/root/root_v5.34.09.source.tar.gz'
+  version '5.34.09'
+  sha1 '2c8a0bb4363bd6b0f9767d6b6bf5a6ea8785b74b'
 
   depends_on 'fftw' => :optional
   depends_on :x11
+  depends_on :python
 
   def install
     #Determine architecture
@@ -23,6 +24,7 @@ class Root < Formula
     system "./configure",
            "#{arch}",
            "--all",
+           "--enable-builtin-glew",
            "--prefix=#{prefix}",
            "--etcdir=#{prefix}/etc/root",
            "--mandir=#{man}"

@@ -1,60 +1,68 @@
+require 'os/mac/version'
+require 'hardware'
+
 module MacOS extend self
 
   # This can be compared to numerics, strings, or symbols
   # using the standard Ruby Comparable methods.
   def version
-    require 'version'
-    MacOSVersion.new(MACOS_VERSION.to_s)
+    @version ||= Version.new(MACOS_VERSION)
   end
 
   def cat
-    if version == :mountain_lion then :mountainlion
-    elsif version == :lion then :lion
-    elsif version == :snow_leopard then :snowleopard
-    elsif version == :leopard then :leopard
-    else nil
-    end
+    version.to_sym
   end
 
   def locate tool
     # Don't call tools (cc, make, strip, etc.) directly!
     # Give the name of the binary you look for as a string to this method
     # in order to get the full path back as a Pathname.
-    @locate ||= {}
-    @locate[tool.to_s] ||= if File.executable? "/usr/bin/#{tool}"
-      Pathname.new "/usr/bin/#{tool}"
-    else
-      # If the tool isn't in /usr/bin, then we first try to use xcrun to find
-      # it. If it's not there, or xcode-select is misconfigured, we have to
-      # look in dev_tools_path, and finally in xctoolchain_path, because the
-      # tools were split over two locations beginning with Xcode 4.3+.
-      xcrun_path = unless Xcode.bad_xcode_select_path?
-        `/usr/bin/xcrun -find #{tool} 2>/dev/null`.chomp
-      end
+    (@locate ||= {}).fetch(tool.to_s) do
+      @locate[tool.to_s] = if File.executable?(path = "/usr/bin/#{tool}")
+        Pathname.new path
+      # Homebrew GCCs most frequently; much faster to check this before xcrun
+      # This also needs to be queried if xcrun won't work, e.g. CLT-only
+      elsif File.executable?(path = "#{HOMEBREW_PREFIX}/bin/#{tool}")
+        Pathname.new path
+      else
+        # If the tool isn't in /usr/bin or from Homebrew,
+        # then we first try to use xcrun to find it.
+        # If it's not there, or xcode-select is misconfigured, we have to
+        # look in dev_tools_path, and finally in xctoolchain_path, because the
+        # tools were split over two locations beginning with Xcode 4.3+.
+        xcrun_path = unless Xcode.bad_xcode_select_path?
+          path = `/usr/bin/xcrun -find #{tool} 2>/dev/null`.chomp
+          # If xcrun finds a superenv tool then discard the result.
+          path unless path.include?("Library/ENV")
+        end
 
-      paths = %W[#{xcrun_path}
-                 #{dev_tools_path}/#{tool}
-                 #{xctoolchain_path}/usr/bin/#{tool}]
-      paths.map { |p| Pathname.new(p) }.find { |p| p.executable? }
+        paths = %W[#{xcrun_path}
+                   #{dev_tools_path}/#{tool}
+                   #{xctoolchain_path}/usr/bin/#{tool}]
+        paths.map { |p| Pathname.new(p) }.find { |p| p.executable? }
+      end
     end
   end
 
   def dev_tools_path
-    @dev_tools_path ||= if File.exist? "/usr/bin/cc" and File.exist? "/usr/bin/make"
+    @dev_tools_path ||= if tools_in_prefix? CLT::STANDALONE_PKG_PATH
+      # In 10.9 the CLT moved from /usr into /Library/Developer/CommandLineTools.
+      Pathname.new "#{CLT::STANDALONE_PKG_PATH}/usr/bin"
+    elsif tools_in_prefix? "/"
       # probably a safe enough assumption (the unix way)
       Pathname.new "/usr/bin"
-    # Note that the exit status of system "xcrun foo" isn't always accurate
     elsif not Xcode.bad_xcode_select_path? and not `/usr/bin/xcrun -find make 2>/dev/null`.empty?
+      # Note that the exit status of system "xcrun foo" isn't always accurate
       # Wherever "make" is there are the dev tools.
       Pathname.new(`/usr/bin/xcrun -find make`.chomp).dirname
     elsif File.exist? "#{Xcode.prefix}/usr/bin/make"
       # cc stopped existing with Xcode 4.3, there are c89 and c99 options though
       Pathname.new "#{Xcode.prefix}/usr/bin"
-    else
-      # Since we are pretty unrelenting in finding Xcode no matter where
-      # it hides, we can now throw in the towel.
-      opoo "Could not locate developer tools. Consult `brew doctor`."
     end
+  end
+
+  def tools_in_prefix?(prefix)
+    %w{cc make}.all? { |tool| File.executable? "#{prefix}/usr/bin/#{tool}" }
   end
 
   def xctoolchain_path
@@ -68,16 +76,17 @@ module MacOS extend self
   end
 
   def sdk_path(v = version)
-    @sdk_path ||= {}
-    @sdk_path[v.to_s] ||= begin
-      opts = []
-      # First query Xcode itself
-      opts << `#{locate('xcodebuild')} -version -sdk macosx#{v} Path 2>/dev/null`.chomp unless Xcode.bad_xcode_select_path?
-      # Xcode.prefix is pretty smart, so lets look inside to find the sdk
-      opts << "#{Xcode.prefix}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX#{v}.sdk"
-      # Xcode < 4.3 style
-      opts << "/Developer/SDKs/MacOSX#{v}.sdk"
-      opts.map{|a| Pathname.new(a) }.detect { |p| p.directory? }
+    (@sdk_path ||= {}).fetch(v.to_s) do
+      @sdk_path[v.to_s] = begin
+        opts = []
+        # First query Xcode itself
+        opts << `#{locate('xcodebuild')} -version -sdk macosx#{v} Path 2>/dev/null`.chomp unless Xcode.bad_xcode_select_path?
+        # Xcode.prefix is pretty smart, so lets look inside to find the sdk
+        opts << "#{Xcode.prefix}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX#{v}.sdk"
+        # Xcode < 4.3 style
+        opts << "/Developer/SDKs/MacOSX#{v}.sdk"
+        opts.map{|a| Pathname.new(a) }.detect { |p| p.directory? }
+      end
     end
   end
 
@@ -104,77 +113,97 @@ module MacOS extend self
   end
 
   def gcc_40_build_version
-    @gcc_40_build_version ||= if locate("gcc-4.0")
-      `#{locate("gcc-4.0")} --version` =~ /build (\d{4,})/
-      $1.to_i
-    end
+    @gcc_40_build_version ||=
+      if (path = locate("gcc-4.0"))
+        %x{#{path} --version}[/build (\d{4,})/, 1].to_i
+      end
   end
+  alias_method :gcc_4_0_build_version, :gcc_40_build_version
 
   def gcc_42_build_version
-    @gcc_42_build_version ||= if locate("gcc-4.2") \
-      and not locate("gcc-4.2").realpath.basename.to_s =~ /^llvm/
-      `#{locate("gcc-4.2")} --version` =~ /build (\d{4,})/
-      $1.to_i
-    end
+    @gcc_42_build_version ||=
+      if (path = locate("gcc-4.2")) && path.realpath.basename.to_s !~ /^llvm/
+        %x{#{path} --version}[/build (\d{4,})/, 1].to_i
+      end
   end
+  alias_method :gcc_build_version, :gcc_42_build_version
 
   def llvm_build_version
     # for Xcode 3 on OS X 10.5 this will not exist
     # NOTE may not be true anymore but we can't test
-    @llvm_build_version ||= if locate("llvm-gcc")
-      `#{locate("llvm-gcc")} --version` =~ /LLVM build (\d{4,})/
-      $1.to_i
-    end
+    @llvm_build_version ||=
+      if (path = locate("llvm-gcc")) && path.realpath.basename.to_s !~ /^clang/
+        %x{#{path} --version}[/LLVM build (\d{4,})/, 1].to_i
+      end
   end
 
   def clang_version
-    @clang_version ||= if locate("clang")
-      `#{locate("clang")} --version` =~ /clang version (\d\.\d)/
-      $1
-    end
+    @clang_version ||=
+      if (path = locate("clang"))
+        %x{#{path} --version}[/(?:clang|LLVM) version (\d\.\d)/, 1]
+      end
   end
 
   def clang_build_version
-    @clang_build_version ||= if locate("clang")
-      `#{locate("clang")} --version` =~ %r[tags/Apple/clang-(\d{2,})]
-      $1.to_i
-    end
+    @clang_build_version ||=
+      if (path = locate("clang"))
+        %x{#{path} --version}[%r[clang-(\d{2,})], 1].to_i
+      end
   end
 
-  def macports_or_fink_installed?
-    # See these issues for some history:
-    # http://github.com/mxcl/homebrew/issues/#issue/13
-    # http://github.com/mxcl/homebrew/issues/#issue/41
-    # http://github.com/mxcl/homebrew/issues/#issue/48
-    return false unless MACOS
+  def non_apple_gcc_version(cc)
+    return unless path = locate(cc)
 
-    %w[port fink].each do |ponk|
+    ivar = "@#{cc.gsub(/(-|\.)/, '')}_version"
+    return instance_variable_get(ivar) if instance_variable_defined?(ivar)
+
+    `#{path} --version` =~ /gcc-\d.\d \(GCC\) (\d\.\d\.\d)/
+    instance_variable_set(ivar, $1)
+  end
+
+  # See these issues for some history:
+  # http://github.com/mxcl/homebrew/issues/#issue/13
+  # http://github.com/mxcl/homebrew/issues/#issue/41
+  # http://github.com/mxcl/homebrew/issues/#issue/48
+  def macports_or_fink
+    paths = []
+
+    # First look in the path because MacPorts is relocatable and Fink
+    # may become relocatable in the future.
+    %w{port fink}.each do |ponk|
       path = which(ponk)
-      return ponk unless path.nil?
+      paths << path unless path.nil?
     end
 
-    # we do the above check because macports can be relocated and fink may be
-    # able to be relocated in the future. This following check is because if
-    # fink and macports are not in the PATH but are still installed it can
-    # *still* break the build -- because some build scripts hardcode these paths:
-    %w[/sw/bin/fink /opt/local/bin/port].each do |ponk|
-      return ponk if File.exist? ponk
+    # Look in the standard locations, because even if port or fink are
+    # not in the path they can still break builds if the build scripts
+    # have these paths baked in.
+    %w{/sw/bin/fink /opt/local/bin/port}.each do |ponk|
+      path = Pathname.new(ponk)
+      paths << path if path.exist?
     end
 
-    # finally, sometimes people make their MacPorts or Fink read-only so they
-    # can quickly test Homebrew out, but still in theory obey the README's
-    # advise to rename the root directory. This doesn't work, many build scripts
-    # error out when they try to read from these now unreadable directories.
-    %w[/sw /opt/local].each do |path|
-      path = Pathname.new(path)
-      return path if path.exist? and not path.readable?
+    # Finally, some users make their MacPorts or Fink directorie
+    # read-only in order to try out Homebrew, but this doens't work as
+    # some build scripts error out when trying to read from these now
+    # unreadable paths.
+    %w{/sw /opt/local}.map { |p| Pathname.new(p) }.each do |path|
+      paths << path if path.exist? && !path.readable?
     end
 
-    false
+    paths.uniq
   end
 
   def prefer_64_bit?
-    Hardware.is_64_bit? and version != :leopard
+    Hardware::CPU.is_64_bit? and version != :leopard
+  end
+
+  def preferred_arch
+    @preferred_arch ||= if prefer_64_bit? 
+      Hardware::CPU.arch_64_bit
+    else
+      Hardware::CPU.arch_32_bit
+    end
   end
 
   STANDARD_COMPILERS = {
@@ -192,27 +221,27 @@ module MacOS extend self
     "4.4.1" => { :llvm_build => 2336, :clang => "4.0", :clang_build => 421 },
     "4.5"   => { :llvm_build => 2336, :clang => "4.1", :clang_build => 421 },
     "4.5.1" => { :llvm_build => 2336, :clang => "4.1", :clang_build => 421 },
-    "4.5.2" => { :llvm_build => 2336, :clang => "4.1", :clang_build => 421 }
+    "4.5.2" => { :llvm_build => 2336, :clang => "4.1", :clang_build => 421 },
+    "4.6"   => { :llvm_build => 2336, :clang => "4.2", :clang_build => 425 },
+    "4.6.1" => { :llvm_build => 2336, :clang => "4.2", :clang_build => 425 },
+    "4.6.2" => { :llvm_build => 2336, :clang => "4.2", :clang_build => 425 },
+    "4.6.3" => { :llvm_build => 2336, :clang => "4.2", :clang_build => 425 },
+    "5.0"   => { :clang => "5.0", :clang_build => 500 },
   }
 
   def compilers_standard?
-    xcode = Xcode.version
-
-    unless STANDARD_COMPILERS.keys.include? xcode
-      onoe <<-EOS.undent
-        Homebrew doesn't know what compiler versions ship with your version of
-        Xcode. Please `brew update` and if that doesn't help, file an issue with
-        the output of `brew --config`:
-          https://github.com/mxcl/homebrew/issues
-
-        Thanks!
-        EOS
-      return
-    end
-
-    STANDARD_COMPILERS[xcode].all? do |method, build|
+    STANDARD_COMPILERS.fetch(Xcode.version.to_s).all? do |method, build|
       MacOS.send(:"#{method}_version") == build
     end
+  rescue IndexError
+    onoe <<-EOS.undent
+      Homebrew doesn't know what compiler versions ship with your version
+      of Xcode (#{Xcode.version}). Please `brew update` and if that doesn't help, file
+      an issue with the output of `brew --config`:
+        https://github.com/mxcl/homebrew/issues
+
+      Thanks!
+    EOS
   end
 
   def app_with_bundle_id id
@@ -221,20 +250,18 @@ module MacOS extend self
   end
 
   def mdfind id
-    `/usr/bin/mdfind "kMDItemCFBundleIdentifier == '#{id}'"`.split("\n")
+    return [] unless MACOS
+    (@mdfind ||= {}).fetch(id.to_s) do
+      @mdfind[id.to_s] = `/usr/bin/mdfind "kMDItemCFBundleIdentifier == '#{id}'"`.split("\n")
+    end
   end
 
   def pkgutil_info id
-    `/usr/sbin/pkgutil --pkg-info "#{id}" 2>/dev/null`.strip
-  end
-
-  def bottles_supported?
-    # We support bottles on all versions of OS X except 32-bit Snow Leopard.
-    (Hardware.is_64_bit? or not MacOS.version >= :snow_leopard) \
-      and HOMEBREW_PREFIX.to_s == '/usr/local' \
-      and HOMEBREW_CELLAR.to_s == '/usr/local/Cellar' \
+    (@pkginfo ||= {}).fetch(id.to_s) do
+      @pkginfo[id.to_s] = `/usr/sbin/pkgutil --pkg-info "#{id}" 2>/dev/null`.strip
+    end
   end
 end
 
-require 'macos/xcode'
-require 'macos/xquartz'
+require 'os/mac/xcode'
+require 'os/mac/xquartz'
