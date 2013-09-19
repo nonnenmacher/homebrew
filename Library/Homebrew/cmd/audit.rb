@@ -568,8 +568,8 @@ class FormulaAuditor
       end
     end
 
-    unless f.requirements.any?{ |r| r.kind_of?(PythonInstalled) }
-      # So if there is no PythonInstalled requirement, we can check if the
+    unless f.requirements.any?{ |r| r.kind_of?(PythonDependency) }
+      # So if there is no PythonDependency requirement, we can check if the
       # formula still uses python and should add a `depends_on :python`
       unless f.name.to_s =~ /(pypy[0-9]*)|(python[0-9]*)/
         if text =~ /system.["' ]?python([0-9"'])?/
@@ -592,8 +592,8 @@ class FormulaAuditor
 
   def audit_check_output warning_and_description
     return unless warning_and_description
-    warning, _ = *warning_and_description
-    problem warning
+    warning, description = *warning_and_description
+    problem "#{warning}\n#{description}"
   end
 
   def audit_installed
