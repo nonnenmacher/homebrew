@@ -9,6 +9,7 @@ require 'bottles'
 require 'caveats'
 require 'cleaner'
 require 'formula_cellar_checks'
+require 'install_renamed'
 
 class FormulaInstaller
   include FormulaCellarChecks
@@ -72,55 +73,15 @@ class FormulaInstaller
     raise
   end
 
-  def git_etc_preinstall
-    return unless quiet_system 'git', '--version'
-
-    etc = HOMEBREW_PREFIX+'etc'
-    etc.cd do
-      quiet_system 'git', 'init' unless (etc+'.git').directory?
-      quiet_system 'git', 'checkout', '-B', "#{f.name}-last"
-      system 'git', 'add', '--all', '.'
-      system 'git', 'commit', '-m', "#{f.name}-#{f.version}: preinstall"
-    end
+  def build_bottle_preinstall
+    @etc_var_glob ||= "#{HOMEBREW_PREFIX}/{etc,var}/**/*"
+    @etc_var_preinstall = Dir[@etc_var_glob]
   end
 
-  def git_etc_postinstall
-    return unless quiet_system 'git', '--version'
-
-    etc = HOMEBREW_PREFIX+'etc'
-    keg_etc_files = Dir[f.etc+'*']
-    last_branch = "#{f.name}-last"
-    default_branch = "#{f.name}-default"
-    merged = false
-    etc.cd do
-      FileUtils.cp_r keg_etc_files, etc
-
-      system 'git', 'add', '--all', '.'
-      if quiet_system 'git', 'diff', '--exit-code', default_branch
-        quiet_system 'git', 'reset', '--hard'
-      else
-        if quiet_system 'git', 'rev-parse', 'master'
-          quiet_system 'git', 'checkout', '-f', 'master'
-          FileUtils.cp_r keg_etc_files, etc
-          quiet_system 'git', 'add', '--all', '.'
-        else
-          quiet_system 'git', 'checkout', '-b' 'master'
-        end
-        system 'git', 'commit', '-m', "#{f.name}-#{f.version}: default"
-        quiet_system 'git', 'branch', '-f', default_branch
-
-        merged = true unless quiet_system 'git' 'merge-base', '--is-ancestor',
-                                          last_branch, 'master'
-        system 'git', 'merge', '--no-ff', '--no-edit',
-               '-X', 'theirs', last_branch
-      end
-
-      if merged
-        ohai "Configuration Files"
-        puts "Your configuration files for #{f.name} in etc were merged:"
-        puts "To reverse this merge: git reset --hard #{last_branch}"
-        puts "To restore defaults:   git reset --hard #{default_branch}"
-      end
+  def build_bottle_postinstall
+    @etc_var_postinstall = Dir[@etc_var_glob]
+    (@etc_var_postinstall - @etc_var_preinstall).each do |file|
+      Pathname.new(file).cp_path_sub(HOMEBREW_PREFIX, f.bottle_prefix)
     end
   end
 
@@ -148,22 +109,9 @@ class FormulaInstaller
       raise "Unrecognized architecture for --bottle-arch: #{arch}"
     end
 
-    if pour_bottle?
-      # TODO We currently only support building with libstdc++ as
-      # the default case, and all Apple libstdc++s are compatible, so
-      # this default is sensible.
-      # In the future we need to actually provide a way to read this from
-      # the bottle, or update the default should that change
-      # at some other point.
-      stdlib_in_use = CxxStdlib.new(:libstdcxx, :clang)
-      stdlib_in_use.check_dependencies(f, f.deps)
-    end
-
     oh1 "Installing #{Tty.green}#{f}#{Tty.reset}" if show_header
 
     @@attempted << f
-
-    git_etc_preinstall if HOMEBREW_GIT_ETC
 
     @poured_bottle = false
 
@@ -171,9 +119,14 @@ class FormulaInstaller
       if pour_bottle? :warn => true
         pour
         @poured_bottle = true
+
+        stdlibs = Keg.new(f.prefix).detect_cxx_stdlibs
+        stdlib_in_use = CxxStdlib.new(stdlibs.first, MacOS.default_compiler)
+        stdlib_in_use.check_dependencies(f, f.recursive_dependencies)
+
         tab = Tab.for_keg f.prefix
         tab.poured_from_bottle = true
-        tab.tabfile.delete rescue nil
+        tab.tabfile.delete if tab.tabfile
         tab.write
       end
     rescue
@@ -181,18 +134,20 @@ class FormulaInstaller
       opoo "Bottle installation failed: building from source."
     end
 
+    build_bottle_preinstall if ARGV.build_bottle?
+
     unless @poured_bottle
       build
       clean
     end
+
+    build_bottle_postinstall if ARGV.build_bottle?
 
     begin
       f.post_install
     rescue
       opoo "#{f.name} post_install failed. Rerun with `brew postinstall #{f.name}`."
     end
-
-    git_etc_postinstall if HOMEBREW_GIT_ETC
 
     opoo "Nothing was installed to #{f.prefix}" unless f.installed?
   end
@@ -281,7 +236,10 @@ class FormulaInstaller
   end
 
   def install_dependencies
-    oh1 "Installing dependencies for #{f}: #{Tty.green}#{effective_deps.join(", ")}#{Tty.reset}" if not effective_deps.empty?
+    if effective_deps.length > 1
+      oh1 "Installing dependencies for #{f}: #{Tty.green}#{effective_deps*", "}#{Tty.reset}"
+    end
+
     effective_deps.each do |dep|
       if dep.requested?
        install_dependency(dep)
@@ -347,7 +305,7 @@ class FormulaInstaller
       link
     end
 
-    fix_install_names
+    fix_install_names if OS.mac?
 
     ohai "Summary" if ARGV.verbose? or show_summary_heading
     unless ENV['HOMEBREW_NO_EMOJI']
@@ -470,7 +428,7 @@ class FormulaInstaller
   end
 
   def fix_install_names
-    Keg.new(f.prefix).fix_install_names
+    Keg.new(f.prefix).fix_install_names(:keg_only => f.keg_only?)
     if @poured_bottle and f.bottle
       old_prefix = f.bottle.prefix
       new_prefix = HOMEBREW_PREFIX.to_s
@@ -479,7 +437,7 @@ class FormulaInstaller
 
       if old_prefix != new_prefix or old_cellar != new_cellar
         Keg.new(f.prefix).relocate_install_names \
-          old_prefix, new_prefix, old_cellar, new_cellar
+          old_prefix, new_prefix, old_cellar, new_cellar, :keg_only => f.keg_only?
       end
     end
   rescue Exception => e
@@ -519,6 +477,13 @@ class FormulaInstaller
     HOMEBREW_CELLAR.cd do
       downloader.stage
     end
+
+    Dir["#{f.bottle_prefix}/{etc,var}/**/*"].each do |file|
+      path = Pathname.new(file)
+      path.extend(InstallRenamed)
+      path.cp_path_sub(f.bottle_prefix, HOMEBREW_PREFIX)
+    end
+    FileUtils.rm_rf f.bottle_prefix
   end
 
   ## checks

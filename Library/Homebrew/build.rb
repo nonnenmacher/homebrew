@@ -141,14 +141,6 @@ class Build
       end
     end
 
-    # We only support libstdc++ right now
-    stdlib_in_use = CxxStdlib.new(:libstdcxx, ENV.compiler)
-
-    # This is a bad place for this check, but we don't have access to
-    # compiler selection within the formula installer, only inside the
-    # build instance.
-    stdlib_in_use.check_dependencies(f, deps)
-
     f.brew do
       if ARGV.flag? '--git'
         system "git init"
@@ -171,7 +163,17 @@ class Build
 
         begin
           f.install
-          Tab.create(f, :libstdcxx, ENV.compiler,
+
+          stdlibs = Keg.new(f.prefix).detect_cxx_stdlibs
+          # It's technically possible for the same lib to link to multiple
+          # C++ stdlibs, but very bad news. Right now we don't track this
+          # woeful scenario.
+          stdlib_in_use = CxxStdlib.new(stdlibs.first, ENV.compiler)
+          # This will raise and fail the build if there's an
+          # incompatibility.
+          stdlib_in_use.check_dependencies(f, deps)
+
+          Tab.create(f, ENV.compiler, stdlibs.first,
             Options.coerce(ARGV.options_only)).write
         rescue Exception => e
           if ARGV.debug?

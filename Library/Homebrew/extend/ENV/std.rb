@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 require 'hardware'
-require 'macos'
+require 'os/mac'
 require 'extend/ENV/shared'
 
 module Stdenv
@@ -195,7 +196,6 @@ module Stdenv
     replace_in_cflags(/-Xarch_#{Hardware::CPU.arch_32_bit} (-march=\S*)/, '\1')
     # Clang mistakenly enables AES-NI on plain Nehalem
     set_cpu_cflags '-march=native', :nehalem => '-march=native -Xclang -target-feature -Xclang -aes'
-    append_to_cflags '-Qunused-arguments'
     @compiler = :clang
   end
 
@@ -224,7 +224,7 @@ module Stdenv
   end
 
   def macosxsdk version=MacOS.version
-    return unless MACOS
+    return unless OS.mac?
     # Sets all needed lib and include dirs to CFLAGS, CPPFLAGS, LDFLAGS.
     remove_macosxsdk
     version = version.to_s
@@ -281,16 +281,18 @@ module Stdenv
     append 'LDFLAGS', "-L#{MacOS::X11.lib}"
     append_path 'CMAKE_PREFIX_PATH', MacOS::X11.prefix
     append_path 'CMAKE_INCLUDE_PATH', MacOS::X11.include
+    append_path 'CMAKE_INCLUDE_PATH', MacOS::X11.include/'freetype2'
 
     append 'CPPFLAGS', "-I#{MacOS::X11.include}"
+    append 'CPPFLAGS', "-I#{MacOS::X11.include}/freetype2"
 
     append_path 'ACLOCAL_PATH', MacOS::X11.share/'aclocal'
 
-    unless MacOS::CLT.installed?
+    if MacOS::XQuartz.provided_by_apple? and not MacOS::CLT.installed?
       append_path 'CMAKE_PREFIX_PATH', MacOS.sdk_path/'usr/X11'
-      append 'CPPFLAGS', "-I#{MacOS::X11.include}/freetype2"
-      append 'CFLAGS', "-I#{MacOS::X11.include}"
     end
+
+    append 'CFLAGS', "-I#{MacOS::X11.include}" unless MacOS::CLT.installed?
   end
   alias_method :libpng, :x11
 
@@ -317,6 +319,29 @@ module Stdenv
     if compiler != :clang && Hardware.is_32_bit?
       # Can't mix "-march" for a 32-bit CPU  with "-arch x86_64"
       replace_in_cflags(/-march=\S*/, "-Xarch_#{Hardware::CPU.arch_32_bit} \\0")
+    end
+  end
+
+  def cxx11
+    if compiler == :clang
+      append 'CXX', '-std=c++11'
+      append 'CXX', '-stdlib=libc++'
+    elsif compiler =~ /gcc-4\.(8|9)/
+      append 'CXX', '-std=c++11'
+    else
+      raise "The selected compiler doesn't support C++11: #{compiler}"
+    end
+  end
+
+  def libcxx
+    if compiler == :clang
+      append 'CXX', '-stdlib=libc++'
+    end
+  end
+
+  def libstdcxx
+    if compiler == :clang
+      append 'CXX', '-stdlib=libstdc++'
     end
   end
 

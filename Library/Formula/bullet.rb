@@ -2,18 +2,19 @@ require 'formula'
 
 class Bullet < Formula
   homepage 'http://bulletphysics.org/wordpress/'
-  url 'http://bullet.googlecode.com/files/bullet-2.81-rev2613.tgz'
-  version '2.81'
-  sha1 'cc7e269bb7565878fa193334e630df0787171555'
+  url 'http://bullet.googlecode.com/files/bullet-2.82-r2704.tgz'
+  version '2.82'
+  sha1 'a0867257b9b18e9829bbeb4c6c5872a5b29d1d33'
   head 'http://bullet.googlecode.com/svn/trunk/'
 
   depends_on 'cmake' => :build
 
   option :universal
-  option 'framework',   'Build Frameworks'
-  option 'shared',      'Build shared libraries'
-  option 'build-demo',  'Build demo applications'
-  option 'build-extra', 'Build extra library'
+  option 'framework',        'Build Frameworks'
+  option 'shared',           'Build shared libraries'
+  option 'build-demo',       'Build demo applications'
+  option 'build-extra',      'Build extra library'
+  option 'double-precision', 'Use double precision'
 
   def install
     args = []
@@ -31,6 +32,7 @@ class Bullet < Formula
     args << "-DBUILD_DEMOS=OFF" if not build.include? "build-demo"
     args << "-DBUILD_EXTRAS=OFF" if not build.include? "build-extra"
     args << "-DINSTALL_EXTRA_LIBS=ON" if build.include? "build-extra"
+    args << "-DUSE_DOUBLE_PRECISION=ON" if build.include? "double-precision"
 
     system "cmake", *args
     system "make"

@@ -13,8 +13,8 @@ class Wine < Formula
   end
 
   devel do
-    url 'http://downloads.sourceforge.net/project/wine/Source/wine-1.7.2.tar.bz2'
-    sha256 '0bfc4276c93de1fdd5989f91807c7362b11995efdf581d60601fec789665b7f1'
+    url 'http://downloads.sourceforge.net/project/wine/Source/wine-1.7.5.tar.bz2'
+    sha256 '355c2980c457f7d714132fcf7008fcb9ad185295bdd9f0681e9123d839952823'
     depends_on 'little-cms2'
   end
 
@@ -41,9 +41,9 @@ class Wine < Formula
   depends_on 'libgsm' => :optional
 
   resource 'gecko' do
-    url 'http://downloads.sourceforge.net/wine/wine_gecko-2.21-x86.msi', :using => :nounzip
-    version '2.21'
-    sha1 'a514fc4d53783a586c7880a676c415695fe934a3'
+    url 'http://downloads.sourceforge.net/wine/wine_gecko-2.24-x86.msi', :using => :nounzip
+    version '2.24'
+    sha1 'b4923c0565e6cbd20075a0d4119ce3b48424f962'
   end
 
   resource 'mono' do
@@ -62,14 +62,18 @@ class Wine < Formula
   end
 
   def patches
+    p = []
     if build.stable?
-      p = []
       # http://bugs.winehq.org/show_bug.cgi?id=34188
       p << 'http://bugs.winehq.org/attachment.cgi?id=45507'
       # http://bugs.winehq.org/show_bug.cgi?id=34162
       p << 'http://bugs.winehq.org/attachment.cgi?id=45562' if MacOS.version >= :mavericks
-      p
     end
+    if build.devel?
+      # http://bugs.winehq.org/show_bug.cgi?id=34166
+      p << 'http://bugs.winehq.org/attachment.cgi?id=46394'
+    end
+    p
   end
 
   # the following libraries are currently not specified as dependencies, or not built as 32-bit:
@@ -82,7 +86,7 @@ class Wine < Formula
 
   def wine_wrapper; <<-EOS.undent
     #!/bin/sh
-    DYLD_FALLBACK_LIBRARY_PATH="#{MacOS::X11.lib}:#{HOMEBREW_PREFIX}/lib:/usr/lib" "#{bin}/wine.bin" "$@"
+    DYLD_FALLBACK_LIBRARY_PATH="#{library_path}" "#{bin}/wine.bin" "$@"
     EOS
   end
 
@@ -93,8 +97,8 @@ class Wine < Formula
     ENV.append "CFLAGS", build32
     ENV.append "LDFLAGS", build32
 
-    # Still miscompiles at v1.6
-    if ENV.compiler == :clang
+    # The clang that comes with Xcode 5 no longer miscompiles wine. Tested with 1.7.3.
+    if ENV.compiler == :clang and Compiler.new(:clang).build < 500
       opoo <<-EOS.undent
         Clang currently miscompiles some parts of Wine. If you have gcc, you
         can get a more stable build with:
@@ -166,5 +170,14 @@ class Wine < Formula
       EOS
     end
     return s
+  end
+
+  private
+
+  def library_path
+    paths = ["#{HOMEBREW_PREFIX}/lib", '/usr/lib']
+    paths.unshift(MacOS::X11.lib) unless build.without? 'x11'
+
+    paths.join(':')
   end
 end
