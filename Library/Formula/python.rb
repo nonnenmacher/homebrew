@@ -3,8 +3,8 @@ require 'formula'
 class Python < Formula
   homepage 'http://www.python.org'
   head 'http://hg.python.org/cpython', :using => :hg, :branch => '2.7'
-  url 'http://www.python.org/ftp/python/2.7.5/Python-2.7.5.tar.bz2'
-  sha1 '6cfada1a739544a6fa7f2601b500fba02229656b'
+  url 'http://www.python.org/ftp/python/2.7.6/Python-2.7.6.tgz'
+  sha1 '8328d9f1d55574a287df384f4931a3942f03da64'
 
   option :universal
   option 'quicktest', 'Run `make quicktest` after the build (for devs; may fail)'
@@ -26,8 +26,8 @@ class Python < Formula
   skip_clean 'bin/easy_install', 'bin/easy_install-2.7'
 
   resource 'setuptools' do
-    url 'https://pypi.python.org/packages/source/s/setuptools/setuptools-1.1.6.tar.gz'
-    sha1 '4a8863e8196704759a5800afbcf33a94b802ac88'
+    url 'https://pypi.python.org/packages/source/s/setuptools/setuptools-1.3.2.tar.gz'
+    sha1 '77180132225c5b4696e6d061655e291f3d1b20f5'
   end
 
   resource 'pip' do
@@ -262,29 +262,6 @@ class Python < Formula
 end
 
 __END__
-# http://bugs.python.org/issue18071 (Remove this hung for 2.7.6!)
-diff --git a/Lib/_osx_support.py b/Lib/_osx_support.py
---- a/Lib/_osx_support.py
-+++ b/Lib/_osx_support.py
-@@ -53,7 +53,7 @@ def _find_executable(executable, path=No
-
-
- def _read_output(commandstring):
--    """Output from succesful command execution or None"""
-+    """Output from successful command execution or None"""
-     # Similar to os.popen(commandstring, "r").read(),
-     # but without actually using os.popen because that
-     # function is not usable during python bootstrap.
-@@ -68,7 +68,7 @@ def _read_output(commandstring):
-
-     with contextlib.closing(fp) as fp:
-         cmd = "%s 2>/dev/null >'%s'" % (commandstring, fp.name)
--        return fp.read().decode('utf-8').strip() if not os.system(cmd) else None
-+        return fp.read().strip() if not os.system(cmd) else None
-
-
-# X11 header find fix (and let homebrew handle this.)
-
 diff --git a/setup.py b/setup.py
 index 716f08e..66114ef 100644
 --- a/setup.py

@@ -35,6 +35,7 @@ class AbstractDownloadStrategy
   def fetch; end
   def stage; end
   def cached_location; end
+  def clear_cache; end
 end
 
 class VCSDownloadStrategy < AbstractDownloadStrategy
@@ -63,6 +64,10 @@ class VCSDownloadStrategy < AbstractDownloadStrategy
   def cached_location
     @clone
   end
+
+  def clear_cache
+    cached_location.rmtree if cached_location.exist?
+  end
 end
 
 class CurlDownloadStrategy < AbstractDownloadStrategy
@@ -84,6 +89,10 @@ class CurlDownloadStrategy < AbstractDownloadStrategy
 
   def cached_location
     tarball_path
+  end
+
+  def clear_cache
+    [cached_location, temporary_path].each { |f| f.unlink if f.exist? }
   end
 
   def downloaded_size
@@ -219,6 +228,7 @@ class CurlApacheMirrorDownloadStrategy < CurlDownloadStrategy
     end
     wr.close
 
+    rd.readline if ARGV.verbose? # Remove Homebrew output
     buf << rd.read until rd.eof?
     rd.close
     Process.wait(pid)
@@ -489,8 +499,15 @@ class GitDownloadStrategy < VCSDownloadStrategy
     @ref_type != :revision and host_supports_depth?
   end
 
+  SHALLOW_CLONE_WHITELIST = [
+    %r{git://},
+    %r{https://github\.com},
+    %r{http://git\.sv\.gnu\.org},
+    %r{http://llvm\.org},
+  ]
+
   def host_supports_depth?
-    @url =~ %r{git://} or @url =~ %r{https://github.com/}
+    SHALLOW_CLONE_WHITELIST.any? { |rx| rx === @url }
   end
 
   def repo_valid?
