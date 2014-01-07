@@ -119,7 +119,7 @@ module Stdenv
     self.cxx = "#{MacOS.dev_tools_path}/g++-4.0"
     replace_in_cflags '-O4', '-O3'
     set_cpu_cflags '-march=nocona -mssse3'
-    @compiler = :gcc
+    @compiler = :gcc_4_0
   end
   alias_method :gcc_4_0, :gcc_4_0_1
 
@@ -130,16 +130,6 @@ module Stdenv
 
     self.cc  = MacOS.locate("gcc-4.2")
     self.cxx = MacOS.locate("g++-4.2")
-
-    unless cc
-      self.cc  = "#{HOMEBREW_PREFIX}/bin/gcc-4.2"
-      self.cxx = "#{HOMEBREW_PREFIX}/bin/g++-4.2"
-      raise "GCC could not be found" unless File.exist? cc
-    end
-
-    unless cc =~ %r{^/usr/bin/xcrun }
-      raise "GCC could not be found" if Pathname.new(cc).realpath.to_s =~ /llvm/
-    end
 
     replace_in_cflags '-O4', '-O3'
     set_cpu_cflags
@@ -343,9 +333,13 @@ module Stdenv
 
     if ARGV.build_bottle?
       arch = ARGV.bottle_arch || Hardware.oldest_cpu
-      append flags, Hardware::CPU.optimization_flags[arch]
+      append flags, Hardware::CPU.optimization_flags.fetch(arch)
+    elsif Hardware::CPU.intel? && !Hardware::CPU.sse4?
+      # If the CPU doesn't support SSE4, we cannot trust -march=native or
+      # -march=<cpu family> to do the right thing because we might be running
+      # in a VM or on a Hackintosh.
+      append flags, Hardware::CPU.optimization_flags.fetch(Hardware.oldest_cpu)
     else
-      # Don't set -msse3 and older flags because -march does that for us
       append flags, map.fetch(Hardware::CPU.family, default)
     end
 
