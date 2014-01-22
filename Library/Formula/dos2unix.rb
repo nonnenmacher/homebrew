@@ -7,6 +7,11 @@ class Dos2unix < Formula
 
   depends_on 'gettext'
 
+  devel do
+    url 'http://waterlan.home.xs4all.nl/dos2unix/dos2unix-6.0.5-beta1.tar.gz'
+    sha1 'bc00e0eb920c1aa02f7c99ccb355837ecce31b03'
+  end
+
   def install
     gettext = Formula.factory("gettext")
     system "make", "prefix=#{prefix}",
@@ -16,5 +21,14 @@ class Dos2unix < Formula
                    "CFLAGS_OS=-I#{gettext.include}",
                    "LDFLAGS_EXTRA=-L#{gettext.lib} -lintl",
                    "install"
+  end
+
+  test do
+    (testpath/'dosfile.txt').write("File with CRLFs\r\nThey will be converted")
+    system "#{bin}/dos2unix", 'dosfile.txt'
+    open('dosfile.txt') do |f|
+      converted = f.read(64)
+      fail if converted.include?("\r")
+    end
   end
 end
