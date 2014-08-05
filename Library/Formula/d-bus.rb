@@ -1,9 +1,15 @@
-require 'formula'
+require "formula"
 
 class DBus < Formula
-  homepage 'http://www.freedesktop.org/wiki/Software/dbus'
-  url 'http://dbus.freedesktop.org/releases/dbus/dbus-1.6.18.tar.gz'
-  sha256 '7085a0895a9eb11a952394cdbea6d8b4358e17cb991fed0e8fb85e2b9e686dcd'
+  homepage "http://www.freedesktop.org/wiki/Software/dbus"
+  url "http://dbus.freedesktop.org/releases/dbus/dbus-1.8.6.tar.gz"
+  sha1 "ad7cb87cdce66533479a9d7c1c956bdb0243ad87"
+
+  bottle do
+    sha1 "080efb67d648af00124b263fbdfe1e99a53831c4" => :mavericks
+    sha1 "96220a126a73a3d78db9fc5e213e54e366cef912" => :mountain_lion
+    sha1 "d59965651e893a73e610aa166333c6b77f56482a" => :lion
+  end
 
   def install
     # Fix the TMPDIR to one D-Bus doesn't reject due to odd symbols
@@ -23,7 +29,7 @@ class DBus < Formula
     ENV.deparallelize
     system "make install"
 
-    (prefix+'org.freedesktop.dbus-session.plist').chmod 0644
+    (prefix+"org.freedesktop.dbus-session.plist").chmod 0644
   end
 
   def post_install

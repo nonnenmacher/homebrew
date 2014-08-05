@@ -8,13 +8,13 @@ require 'version'
 class Resource
   include FileUtils
 
-  attr_reader :name
   attr_reader :checksum, :mirrors, :specs, :using
   attr_writer :url, :checksum, :version
+  attr_accessor :download_strategy
 
   # Formula name must be set after the DSL, as we have no access to the
   # formula name before initialization of the formula
-  attr_accessor :owner
+  attr_accessor :name, :owner
 
   def initialize name=nil, &block
     @name = name
@@ -33,10 +33,6 @@ class Resource
 
   def download_name
     name.nil? ? owner.name : "#{owner.name}--#{name}"
-  end
-
-  def download_strategy
-    @download_strategy ||= DownloadStrategyDetector.detect(url, using)
   end
 
   def cached_download
@@ -96,12 +92,8 @@ class Resource
     puts "For your reference the SHA1 is: #{fn.sha1}"
   end
 
-  Checksum::TYPES.each do |cksum|
-    class_eval <<-EOS, __FILE__, __LINE__ + 1
-      def #{cksum}(val)
-        @checksum = Checksum.new(:#{cksum}, val)
-      end
-    EOS
+  Checksum::TYPES.each do |type|
+    define_method(type) { |val| @checksum = Checksum.new(type, val) }
   end
 
   def url val=nil, specs={}
@@ -109,6 +101,7 @@ class Resource
     @url = val
     @specs.merge!(specs)
     @using = @specs.delete(:using)
+    @download_strategy = DownloadStrategyDetector.detect(url, using)
   end
 
   def version val=nil
@@ -123,9 +116,9 @@ class Resource
 
   def detect_version(val)
     case val
-    when nil    then Version.detect(url, specs)
-    when String then Version.new(val)
-    when Hash   then Version.new_with_scheme(*val.shift)
+    when nil     then Version.detect(url, specs)
+    when String  then Version.new(val)
+    when Version then val
     else
       raise TypeError, "version '#{val.inspect}' should be a string"
     end

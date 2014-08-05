@@ -2,7 +2,7 @@ require 'formula'
 
 class Sleuthkit < Formula
   homepage 'http://www.sleuthkit.org/'
-  url 'http://downloads.sourceforge.net/project/sleuthkit/sleuthkit/4.1.3/sleuthkit-4.1.3.tar.gz'
+  url 'https://downloads.sourceforge.net/project/sleuthkit/sleuthkit/4.1.3/sleuthkit-4.1.3.tar.gz'
   sha1 '9350bb59bb5fbe41d6e29a8d0494460b937749ef'
 
   head do
@@ -17,7 +17,7 @@ class Sleuthkit < Formula
 
   option 'with-jni', "Build Sleuthkit with JNI bindings"
 
-  depends_on :ant
+  depends_on :ant => :build
   depends_on 'afflib' => :optional
   depends_on 'libewf' => :optional
 

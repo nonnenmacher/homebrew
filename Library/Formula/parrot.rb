@@ -1,24 +1,19 @@
-require 'formula'
+require "formula"
 
 class Parrot < Formula
-  homepage 'http://www.parrot.org/'
-  url 'ftp://ftp.parrot.org/pub/parrot/releases/supported/5.9.0/parrot-5.9.0.tar.bz2'
-  sha256 'b4704231d90ddec827f45f945b9ad13dd4f9dc7cc9bc0cfc97ab6e30ec1c38ca'
+  homepage "http://www.parrot.org/"
+  url "ftp://ftp.parrot.org/pub/parrot/releases/supported/6.6.0/parrot-6.6.0.tar.bz2"
+  sha256 "08e9e02db952828f6ab71755be47f99ebc90894378f04d8e4d7f3bc623f79ff5"
 
-  devel do
-    url 'ftp://ftp.parrot.org/pub/parrot/releases/devel/5.10.0/parrot-5.10.0.tar.bz2'
-    sha256 '6030f72adccdb577a8e781e3d81c52dc60d68c6a9e2be626db3cff69e1f36ce5'
-  end
+  head "https://github.com/parrot/parrot.git"
 
-  head 'https://github.com/parrot/parrot.git'
+  conflicts_with "rakudo-star"
 
-  conflicts_with 'rakudo-star'
-
-  depends_on 'gmp' => :optional
-  depends_on 'icu4c' => :optional
-  depends_on 'pcre' => :optional
-  depends_on 'readline' => :optional
-  depends_on 'libffi' => :optional
+  depends_on "gmp" => :optional
+  depends_on "icu4c" => :optional
+  depends_on "pcre" => :optional
+  depends_on "readline" => :optional
+  depends_on "libffi" => :optional
 
   def install
     system "perl", "Configure.pl", "--prefix=#{prefix}",
@@ -29,6 +24,24 @@ class Parrot < Formula
     system "make"
     system "make install"
     # Don't install this file in HOMEBREW_PREFIX/lib
-    rm_rf lib/'VERSION'
+    rm_rf lib/"VERSION"
+  end
+
+  test do
+    path = testpath/"test.pir"
+    path.write <<-EOS.undent
+      .sub _main
+        .local int i
+        i = 0
+      loop:
+        print i
+        inc i
+        if i < 10 goto loop
+      .end
+    EOS
+
+    out = `#{bin}/parrot #{path}`
+    assert_equal "0123456789", out
+    assert_equal 0, $?.exitstatus
   end
 end

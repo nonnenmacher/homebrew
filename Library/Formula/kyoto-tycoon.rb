@@ -1,30 +1,30 @@
-require 'formula'
+require "formula"
 
 class KyotoTycoon < Formula
-  homepage 'http://fallabs.com/kyototycoon/'
-  url 'http://fallabs.com/kyototycoon/pkg/kyototycoon-0.9.56.tar.gz'
-  sha1 'e5433833e681f8755ff6b9f7209029ec23914ce6'
+  homepage "http://fallabs.com/kyototycoon/"
+  url "http://fallabs.com/kyototycoon/pkg/kyototycoon-0.9.56.tar.gz"
+  sha1 "e5433833e681f8755ff6b9f7209029ec23914ce6"
 
-  option "no-lua", "Disable Lua support"
+  depends_on "lua" => :recommended
+  depends_on "kyoto-cabinet"
 
-  depends_on 'lua' unless build.include? "no-lua"
-  depends_on 'kyoto-cabinet'
+  patch :DATA if MacOS.version >= :mavericks
 
   def install
     # Locate kyoto-cabinet for non-/usr/local builds
-    cabinet = Formula.factory("kyoto-cabinet")
-    args = ["--prefix=#{prefix}", "--with-kc=#{cabinet.opt_prefix}"]
-    args << "--enable-lua" unless build.include? "no-lua"
+    cabinet = Formula["kyoto-cabinet"].opt_prefix
+    args = ["--prefix=#{prefix}", "--with-kc=#{cabinet}"]
+
+    if build.with? "lua"
+      lua = Formula["lua"].opt_prefix
+      args << "--with-lua=#{lua}"
+    else
+      args << "--enable-lua"
+    end
 
     system "./configure", *args
     system "make"
     system "make install"
-  end
-
-  def patches
-    if MacOS.version >= :mavericks
-      DATA
-    end
   end
 end
 

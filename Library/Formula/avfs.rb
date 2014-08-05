@@ -2,16 +2,14 @@ require 'formula'
 
 class Avfs < Formula
   homepage 'http://avf.sourceforge.net/'
-  url 'http://downloads.sourceforge.net/project/avf/avfs/1.0.1/avfs-1.0.1.tar.gz'
+  url 'https://downloads.sourceforge.net/project/avf/avfs/1.0.1/avfs-1.0.1.tar.gz'
   sha1 '77ce08fb10c680e6d5821ea8634d06a351b747f2'
 
   depends_on 'pkg-config' => :build
   depends_on 'osxfuse'
 
-  def patches
-    # Fix scripts to work on Mac OS X.
-    DATA
-  end
+  # Fix scripts to work on Mac OS X.
+  patch :DATA
 
   def install
     system "./configure", "--disable-debug",
@@ -25,7 +23,7 @@ class Avfs < Formula
   end
 
   test do
-    system "avfsd", "--version"
+    system bin/"avfsd", "--version"
   end
 end
 

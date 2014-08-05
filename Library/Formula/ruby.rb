@@ -2,12 +2,20 @@ require 'formula'
 
 class Ruby < Formula
   homepage 'https://www.ruby-lang.org/'
-  url 'http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.0.tar.bz2'
-  sha256 '1d3f4ad5f619ec15229206b6667586dcec7cc986672c8fbb8558161ecf07e277'
+  url "http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.2.tar.bz2"
+  sha256 "6948b02570cdfb89a8313675d4aa665405900e27423db408401473f30fc6e901"
+  revision 2
+
+  bottle do
+    revision 1
+    sha1 "d7394d40bc1a49f40a41ea7b7564c35907937cad" => :mavericks
+    sha1 "9eb3ed6e198866f4f2330df5cd9708b2e0c72783" => :mountain_lion
+    sha1 "e9ef55620f60145e1145c05972f2724c6568c5cd" => :lion
+  end
 
   head do
     url 'http://svn.ruby-lang.org/repos/ruby/trunk/'
-    depends_on :autoconf
+    depends_on "autoconf" => :build
   end
 
   option :universal
@@ -28,88 +36,104 @@ class Ruby < Formula
     build 2326
   end
 
-  # pthread_setname_np() is unavailable before Snow Leopard
-  # Reported upstream: https://bugs.ruby-lang.org/issues/9492
-  def patches; DATA; end if MacOS.version < :snow_leopard
-
   def install
     system "autoconf" if build.head?
 
-    args = %W[--prefix=#{prefix} --enable-shared --disable-silent-rules]
+    args = %W[
+      --prefix=#{prefix} --enable-shared --disable-silent-rules
+      --with-sitedir=#{HOMEBREW_PREFIX}/lib/ruby/site_ruby
+      --with-vendordir=#{HOMEBREW_PREFIX}/lib/ruby/vendor_ruby
+      ]
     args << "--program-suffix=21" if build.with? "suffix"
     args << "--with-arch=#{Hardware::CPU.universal_archs.join(',')}" if build.universal?
-    args << "--with-out-ext=tk" unless build.with? "tcltk"
-    args << "--disable-install-doc" unless build.with? "doc"
+    args << "--with-out-ext=tk" if build.without? "tcltk"
+    args << "--disable-install-doc" if build.without? "doc"
     args << "--disable-dtrace" unless MacOS::CLT.installed?
+    args << "--without-gmp" if build.without? "gmp"
 
-    paths = []
+    paths = [
+      Formula["libyaml"].opt_prefix,
+      Formula["openssl"].opt_prefix
+    ]
 
-    paths.concat %w[readline gdbm gmp libffi].map { |dep|
-      Formula.factory(dep).opt_prefix if build.with? dep
-    }.compact
-
-    paths.concat %w[libyaml openssl].map { |dep|
-      Formula.factory(dep).opt_prefix
+    %w[readline gdbm gmp libffi].each { |dep|
+      paths << Formula[dep].opt_prefix if build.with? dep
     }
 
     args << "--with-opt-dir=#{paths.join(":")}"
 
-    # Put gem, site and vendor folders in the HOMEBREW_PREFIX
-    ruby_lib = HOMEBREW_PREFIX/"lib/ruby"
-    (ruby_lib/'site_ruby').mkpath
-    (ruby_lib/'vendor_ruby').mkpath
-    (ruby_lib/'gems').mkpath
-
-    (lib/'ruby').install_symlink ruby_lib/'site_ruby',
-                                 ruby_lib/'vendor_ruby',
-                                 ruby_lib/'gems'
-
     system "./configure", *args
     system "make"
     system "make install"
+
+    # Customize rubygems to look/install in the global gem directory
+    # instead of in the Cellar, making gems last across reinstalls
+    (lib/"ruby/2.1.0/rubygems/defaults/operating_system.rb").write rubygems_config
   end
 
-  def caveats; <<-EOS.undent
-    By default, gem installed executables will be placed into:
-      #{opt_prefix}/bin
+  def rubygems_config; <<-EOS.undent
+    module Gem
+      class << self
+        alias :old_default_dir :default_dir
+        alias :old_default_path :default_path
+        alias :old_default_bindir :default_bindir
+      end
 
-    You may want to add this to your PATH. After upgrades, you can run
-      gem pristine --all --only-executables
+      def self.default_dir
+        path = [
+          "#{HOMEBREW_PREFIX}",
+          "lib",
+          "ruby",
+          "gems",
+          "2.1.0"
+        ]
 
-    to restore binstubs for installed gems.
+        @default_dir ||= File.join(*path)
+      end
+
+      def self.private_dir
+        path = if defined? RUBY_FRAMEWORK_VERSION then
+                 [
+                   File.dirname(RbConfig::CONFIG['sitedir']),
+                   'Gems',
+                   RbConfig::CONFIG['ruby_version']
+                 ]
+               elsif RbConfig::CONFIG['rubylibprefix'] then
+                 [
+                  RbConfig::CONFIG['rubylibprefix'],
+                  'gems',
+                  RbConfig::CONFIG['ruby_version']
+                 ]
+               else
+                 [
+                   RbConfig::CONFIG['libdir'],
+                   ruby_engine,
+                   'gems',
+                   RbConfig::CONFIG['ruby_version']
+                 ]
+               end
+
+        @private_dir ||= File.join(*path)
+      end
+
+      def self.default_path
+        if Gem.user_home && File.exist?(Gem.user_home)
+          [user_dir, default_dir, private_dir]
+        else
+          [default_dir, private_dir]
+        end
+      end
+
+      def self.default_bindir
+        "#{HOMEBREW_PREFIX}/bin"
+      end
+    end
     EOS
   end
-end
 
-__END__
-diff --git a/thread_pthread.c b/thread_pthread.c
-index 3911f8f..74d1ab7 100644
---- a/thread_pthread.c
-+++ b/thread_pthread.c
-@@ -1416,15 +1416,6 @@ timer_thread_sleep(rb_global_vm_lock_t* unused)
- }
- #endif /* USE_SLEEPY_TIMER_THREAD */
- 
--#if defined(__linux__) && defined(PR_SET_NAME)
--# define SET_THREAD_NAME(name) prctl(PR_SET_NAME, name)
--#elif defined(__APPLE__)
--/* pthread_setname_np() on Darwin does not have target thread argument */
--# define SET_THREAD_NAME(name) pthread_setname_np(name)
--#else
--# define SET_THREAD_NAME(name) (void)0
--#endif
--
- static void *
- thread_timer(void *p)
- {
-@@ -1432,7 +1423,9 @@ thread_timer(void *p)
- 
-     if (TT_DEBUG) WRITE_CONST(2, "start timer thread\n");
- 
--    SET_THREAD_NAME("ruby-timer-thr");
-+#if defined(__linux__) && defined(PR_SET_NAME)
-+    prctl(PR_SET_NAME, "ruby-timer-thr");
-+#endif
- 
- #if !USE_SLEEPY_TIMER_THREAD
-     native_mutex_initialize(&timer_thread_lock);
+  test do
+    output = `#{bin}/ruby -e 'puts "hello"'`
+    assert_equal "hello\n", output
+    assert_equal 0, $?.exitstatus
+  end
+end

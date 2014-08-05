@@ -1,31 +1,24 @@
-require 'formula'
+require "formula"
 
 class Lftp < Formula
-  homepage 'http://lftp.yar.ru/'
-  url 'http://lftp.yar.ru/ftp/lftp-4.4.14.tar.bz2'
-  sha1 'f34cfc0351f8e63a066cf8014ac32a52f5159434'
+  homepage "http://lftp.yar.ru/"
+  url "http://lftp.yar.ru/ftp/lftp-4.5.3.tar.gz"
+  sha1 "7c70d2b428c071fc19dd340bcd5bf04069b5fad0"
 
-  option 'with-gnutls', "Use GnuTLS instead of the default OpenSSL"
-  option 'with-brewed-openssl', 'Build with Homebrew OpenSSL instead of the system version'
+  bottle do
+    sha1 "e77c6a4db177a1d57d4d64a26c0695f04458ce70" => :mavericks
+    sha1 "fae24a8f755a8a35a41059b78da9c12567659b61" => :mountain_lion
+    sha1 "9d9f72624246af050ef7131697d21874f487a8a7" => :lion
+  end
 
-  depends_on 'pkg-config' => :build
-  depends_on 'readline'
-  depends_on 'gnutls' => :optional
-  depends_on 'openssl' if build.with? 'brewed-openssl'
+  depends_on "pkg-config" => :build
+  depends_on "readline"
+  depends_on "openssl"
 
   def install
-    # Bus error
-    # TODO what are the more specific circumstances?
-    ENV.no_optimization if MacOS.version <= :leopard
-
-    args = ["--disable-dependency-tracking",
-            "--prefix=#{prefix}"]
-    if build.with? 'gnutls'
-     args << "--with-gnutls"
-    else
-     args << "--with-openssl"
-    end
-    system "./configure", *args
-    system "make install"
+    system "./configure", "--disable-dependency-tracking",
+                          "--prefix=#{prefix}",
+                          "--with-openssl=#{Formula["openssl"].opt_prefix}"
+    system "make", "install"
   end
 end

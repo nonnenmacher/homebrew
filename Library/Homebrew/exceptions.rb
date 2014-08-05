@@ -39,22 +39,31 @@ class FormulaUnavailableError < RuntimeError
   attr_reader :name
   attr_accessor :dependent
 
+  def initialize name
+    @name = name
+  end
+
   def dependent_s
     "(dependency of #{dependent})" if dependent and dependent != name
   end
 
   def to_s
-    if name =~ HOMEBREW_TAP_FORMULA_REGEX then <<-EOS.undent
-      No available formula for #$3 #{dependent_s}
-      Please tap it and then try again: brew tap #$1/#$2
-      EOS
-    else
-      "No available formula for #{name} #{dependent_s}"
-    end
+    "No available formula for #{name} #{dependent_s}"
   end
+end
+
+class TapFormulaUnavailableError < FormulaUnavailableError
+  attr_reader :user, :repo, :shortname
 
   def initialize name
-    @name = name
+    super
+    @user, @repo, @shortname = name.split("/", 3)
+  end
+
+  def to_s; <<-EOS.undent
+      No available formula for #{shortname} #{dependent_s}
+      Please tap it and then try again: brew tap #{user}/#{repo}
+    EOS
   end
 end
 
@@ -88,15 +97,6 @@ class FormulaAlreadyInstalledError < RuntimeError; end
 class FormulaInstallationAlreadyAttemptedError < Homebrew::InstallationError
   def message
     "Formula installation already attempted: #{formula}"
-  end
-end
-
-class UnsatisfiedDependencyError < Homebrew::InstallationError
-  def initialize(f, dep)
-    super f, <<-EOS.undent
-    #{f} dependency #{dep} not installed with:
-      #{dep.missing_options * ', '}
-    EOS
   end
 end
 
@@ -154,18 +154,13 @@ class FormulaConflictError < Homebrew::InstallationError
 end
 
 class BuildError < Homebrew::InstallationError
-  attr_reader :exit_status, :command, :env
+  attr_reader :command, :env
 
-  def initialize formula, cmd, args, es
+  def initialize formula, cmd, args
     @command = cmd
     @env = ENV.to_hash
-    @exit_status = es.exitstatus rescue 1
     args = args.map{ |arg| arg.to_s.gsub " ", "\\ " }.join(" ")
     super formula, "Failed executing: #{command} #{args}"
-  end
-
-  def was_running_configure?
-    @command == './configure'
   end
 
   def issues
@@ -182,35 +177,34 @@ class BuildError < Homebrew::InstallationError
   def dump
     if not ARGV.verbose?
       puts
-      puts "#{Tty.red}READ THIS#{Tty.reset}: #{Tty.em}#{ISSUES_URL}#{Tty.reset}"
+      puts "#{Tty.red}READ THIS#{Tty.reset}: #{Tty.em}#{OS::ISSUES_URL}#{Tty.reset}"
       if formula.tap?
-        user, repo = formula.tap.split '/'
-        tap_issues_url = "https://github.com/#{user}/homebrew-#{repo}/issues"
+        tap_issues_url = "https://github.com/#{formula.tap}/issues"
         puts "If reporting this issue please do so at (not Homebrew/homebrew):"
         puts "  #{tap_issues_url}"
       end
     else
-      require 'cmd/--config'
+      require 'cmd/config'
       require 'cmd/--env'
 
       unless formula.core_formula?
         ohai "Formula"
         puts "Tap: #{formula.tap}"
-        puts "Path: #{formula.path.realpath}"
+        puts "Path: #{formula.path}"
       end
       ohai "Configuration"
       Homebrew.dump_build_config
       ohai "ENV"
       Homebrew.dump_build_env(env)
       puts
-      onoe "#{formula.name} did not build"
+      onoe "#{formula.name} #{formula.version} did not build"
       unless (logs = Dir["#{HOMEBREW_LOGS}/#{formula}/*"]).empty?
         puts "Logs:"
         puts logs.map{|fn| "     #{fn}"}.join("\n")
       end
     end
     puts
-    unless RUBY_VERSION < "1.8.6" || issues.empty?
+    unless RUBY_VERSION < "1.8.7" || issues.empty?
       puts "These open issues may also help:"
       puts issues.map{ |i| "#{i['title']} (#{i['html_url']})" }.join("\n")
     end
@@ -224,7 +218,7 @@ class CompilerSelectionError < Homebrew::InstallationError
     super f, <<-EOS.undent
     #{f.name} cannot be built with any available compilers.
     To install this formula, you may need to:
-      brew install apple-gcc42
+      brew install gcc
     EOS
   end
 end

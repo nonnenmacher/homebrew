@@ -1,18 +1,15 @@
-require 'formula'
+require "formula"
 
 class Mysql < Formula
-  homepage 'http://dev.mysql.com/doc/refman/5.6/en/'
-  url 'http://cdn.mysql.com/Downloads/MySQL-5.6/mysql-5.6.16.tar.gz'
-  sha1 '64a3b4058e2039d2b812d23c8793f74b4f168cc0'
+  homepage "http://dev.mysql.com/doc/refman/5.6/en/"
+  url "http://cdn.mysql.com/Downloads/MySQL-5.6/mysql-5.6.20.tar.gz"
+  sha1 "10f9ed2bbf3fbf227b799f1c7af3a0c7f7cf4d95"
 
   bottle do
-    sha1 "d3a5e4520a7ca88bc78977d7d2276e7f35e4a456" => :mavericks
-    sha1 "edf5bde3e4c2e96a45231c1feee7b2cfd6cc1cba" => :mountain_lion
-    sha1 "5ac5f5db4ea3f00ed276c303523870afcecd68c2" => :lion
+    sha1 "a1b0fb1bd23596fb3fbc5d5cf2a0e945d14357bc" => :mavericks
+    sha1 "f4284ea20f671b257fbc0998a4b64a7eaff35baa" => :mountain_lion
+    sha1 "35b182b42d68791f6b0573cc24bccd8438e51bbd" => :lion
   end
-
-  depends_on 'cmake' => :build
-  depends_on 'pidof' unless MacOS.version >= :mountain_lion
 
   option :universal
   option 'with-tests', 'Build with unit tests'
@@ -23,12 +20,14 @@ class Mysql < Formula
   option 'enable-memcached', 'Enable innodb-memcached support'
   option 'enable-debug', 'Build with debug support'
 
+  depends_on 'cmake' => :build
+  depends_on 'pidof' unless MacOS.version >= :mountain_lion
+  depends_on 'openssl'
+
   conflicts_with 'mysql-cluster', 'mariadb', 'percona-server',
     :because => "mysql, mariadb, and percona install the same binaries."
   conflicts_with 'mysql-connector-c',
     :because => 'both install MySQL client libraries'
-
-  env :std if build.universal?
 
   fails_with :llvm do
     build 2326
@@ -59,6 +58,7 @@ class Mysql < Formula
       -DINSTALL_INFODIR=share/info
       -DINSTALL_MYSQLSHAREDIR=share/mysql
       -DWITH_SSL=yes
+      -DWITH_SSL=system
       -DDEFAULT_CHARSET=utf8
       -DDEFAULT_COLLATION=utf8_general_ci
       -DSYSCONFDIR=#{etc}
@@ -83,7 +83,10 @@ class Mysql < Formula
     args << "-DWITH_BLACKHOLE_STORAGE_ENGINE=1" if build.with? 'blackhole-storage-engine'
 
     # Make universal for binding to universal applications
-    args << "-DCMAKE_OSX_ARCHITECTURES='#{Hardware::CPU.universal_archs.as_cmake_arch_flags}'" if build.universal?
+    if build.universal?
+      ENV.universal_binary
+      args << "-DCMAKE_OSX_ARCHITECTURES=#{Hardware::CPU.universal_archs.as_cmake_arch_flags}"
+    end
 
     # Build with local infile loading support
     args << "-DENABLED_LOCAL_INFILE=1" if build.include? 'enable-local-infile'
@@ -103,7 +106,7 @@ class Mysql < Formula
     rm_rf prefix+'data'
 
     # Link the setup script into bin
-    ln_s prefix+'scripts/mysql_install_db', bin+'mysql_install_db'
+    bin.install_symlink prefix/"scripts/mysql_install_db"
 
     # Fix up the control script and link into bin
     inreplace "#{prefix}/support-files/mysql.server" do |s|
@@ -112,18 +115,17 @@ class Mysql < Formula
       s.gsub!(/pidof/, 'pgrep') if MacOS.version >= :mountain_lion
     end
 
-    ln_s "#{prefix}/support-files/mysql.server", bin
+    bin.install_symlink prefix/"support-files/mysql.server"
 
     # Move mysqlaccess to libexec
     libexec.mkpath
     mv "#{bin}/mysqlaccess", libexec
     mv "#{bin}/mysqlaccess.conf", libexec
-
-    # Make sure the var/mysql directory exists
-    (var+"mysql").mkpath
   end
 
   def post_install
+    # Make sure the var/mysql directory exists
+    (var+"mysql").mkpath
     unless File.exist? "#{var}/mysql/mysql/user.frm"
       ENV['TMPDIR'] = nil
       system "#{bin}/mysql_install_db", '--verbose', "--user=#{ENV['USER']}",
@@ -153,8 +155,9 @@ class Mysql < Formula
       <string>#{plist_name}</string>
       <key>ProgramArguments</key>
       <array>
-        <string>#{opt_prefix}/bin/mysqld_safe</string>
+        <string>#{opt_bin}/mysqld_safe</string>
         <string>--bind-address=127.0.0.1</string>
+        <string>--datadir=#{var}/mysql</string>
       </array>
       <key>RunAtLoad</key>
       <true/>

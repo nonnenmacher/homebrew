@@ -1,17 +1,14 @@
 require 'testing_env'
 require 'software_spec'
-require 'bottles'
 
-class SoftwareSpecTests < Test::Unit::TestCase
-  include VersionAssertions
-
+class SoftwareSpecTests < Homebrew::TestCase
   def setup
     @spec = SoftwareSpec.new
   end
 
   def test_resource
     @spec.resource('foo') { url 'foo-1.0' }
-    assert @spec.resource?('foo')
+    assert @spec.resource_defined?("foo")
   end
 
   def test_raises_when_duplicate_resources_are_defined
@@ -23,6 +20,12 @@ class SoftwareSpecTests < Test::Unit::TestCase
 
   def test_raises_when_accessing_missing_resources
     assert_raises(ResourceMissingError) { @spec.resource('foo') }
+  end
+
+  def test_set_owner
+    owner = stub(:name => 'some_name')
+    @spec.owner = owner
+    assert_equal owner, @spec.owner
   end
 
   def test_resource_owner
@@ -41,7 +44,7 @@ class SoftwareSpecTests < Test::Unit::TestCase
 
   def test_option
     @spec.option('foo')
-    assert @spec.build.has_option? 'foo'
+    assert @spec.option_defined?("foo")
   end
 
   def test_option_raises_when_begins_with_dashes
@@ -54,7 +57,7 @@ class SoftwareSpecTests < Test::Unit::TestCase
 
   def test_option_accepts_symbols
     @spec.option(:foo)
-    assert @spec.build.has_option? 'foo'
+    assert @spec.option_defined?("foo")
   end
 
   def test_depends_on
@@ -65,20 +68,24 @@ class SoftwareSpecTests < Test::Unit::TestCase
   def test_dependency_option_integration
     @spec.depends_on 'foo' => :optional
     @spec.depends_on 'bar' => :recommended
-    assert @spec.build.has_option?('with-foo')
-    assert @spec.build.has_option?('without-bar')
+    assert @spec.option_defined?("with-foo")
+    assert @spec.option_defined?("without-bar")
   end
 
   def test_explicit_options_override_default_dep_option_description
     @spec.option('with-foo', 'blah')
     @spec.depends_on('foo' => :optional)
-    assert_equal 'blah', @spec.build.first.description
+    assert_equal "blah", @spec.options.first.description
+  end
+
+  def test_patch
+    @spec.patch :p1, :DATA
+    assert_equal 1, @spec.patches.length
+    assert_equal :p1, @spec.patches.first.strip
   end
 end
 
-class HeadSoftwareSpecTests < Test::Unit::TestCase
-  include VersionAssertions
-
+class HeadSoftwareSpecTests < Homebrew::TestCase
   def setup
     @spec = HeadSoftwareSpec.new
   end
@@ -92,9 +99,9 @@ class HeadSoftwareSpecTests < Test::Unit::TestCase
   end
 end
 
-class BottleTests < Test::Unit::TestCase
+class BottleSpecificationTests < Homebrew::TestCase
   def setup
-    @spec = Bottle.new
+    @spec = BottleSpecification.new
   end
 
   def test_checksum_setters
@@ -110,8 +117,8 @@ class BottleTests < Test::Unit::TestCase
     end
 
     checksums.each_pair do |cat, sha1|
-      hsh, _ = @spec.instance_variable_get(:@sha1).fetch_bottle_for(cat)
-      assert_equal Checksum.new(:sha1, sha1), hsh
+      checksum, _ = @spec.checksum_for(cat)
+      assert_equal Checksum.new(:sha1, sha1), checksum
     end
   end
 

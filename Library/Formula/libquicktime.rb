@@ -2,8 +2,14 @@ require 'formula'
 
 class Libquicktime < Formula
   homepage 'http://libquicktime.sourceforge.net/'
-  url 'http://downloads.sourceforge.net/project/libquicktime/libquicktime/1.2.4/libquicktime-1.2.4.tar.gz'
+  url 'https://downloads.sourceforge.net/project/libquicktime/libquicktime/1.2.4/libquicktime-1.2.4.tar.gz'
   sha1 '7008b2dc27b9b40965bd2df42d39ff4cb8b6305e'
+
+  bottle do
+    sha1 "7fdbf524e3218f388a4c4c5d09d379e6ec683e80" => :mavericks
+    sha1 "0ae156b34f1f9a66ca5a5ec44da3eb48af82d8cf" => :mountain_lion
+    sha1 "2abb322988a814ae09d6c6f1577fad08ac3a0ca3" => :lion
+  end
 
   depends_on 'pkg-config' => :build
   depends_on 'gettext'
@@ -15,12 +21,11 @@ class Libquicktime < Formula
 
   # Fixes compilation with ffmpeg 2.x; applied upstream
   # http://sourceforge.net/p/libquicktime/mailman/message/30792767/
-  def patches
-    {
-      :p0 => "http://sourceforge.net/p/libquicktime/mailman/attachment/51812B9E.3090802%40mirriad.com/1/",
-      :p1 => DATA
-    }
+  patch :p0 do
+    url "http://sourceforge.net/p/libquicktime/mailman/attachment/51812B9E.3090802%40mirriad.com/1/"
+    sha1 "58c19548a7ae71fb20ee94ef41fd0c3a967c96c0"
   end
+  patch :DATA
 
   def install
     system "./configure", "--disable-debug",
