@@ -2,9 +2,9 @@ require 'formula'
 
 class JbossForge < Formula
   homepage 'http://forge.jboss.org/'
-  url 'https://repository.jboss.org/nexus/service/local/artifact/maven/redirect?r=releases&g=org.jboss.forge&a=forge-distribution&v=2.7.2.Final&e=zip&c=offline'
-  version '2.7.2.Final'
-  sha1 '5715dfb0cf13ec8f96971d698f97e6eb40e9a2b7'
+  url 'https://repository.jboss.org/nexus/service/local/artifact/maven/redirect?r=releases&g=org.jboss.forge&a=forge-distribution&v=2.14.0.Final&e=zip&c=offline'
+  version '2.14.0.Final'
+  sha1 'bef394531988406eb5a94f478069cc2b89c875dd'
 
   def install
     rm_f Dir["bin/*.bat"]

@@ -3,13 +3,14 @@ require "formula"
 class Hugo < Formula
   homepage "http://hugo.spf13.com/"
   head "https://github.com/spf13/hugo.git"
-  url "https://github.com/spf13/hugo.git", :tag => "v0.11"
-  sha1 "eb036b11d915bf78d0d679ee14ec065458977e2e"
+  url "https://github.com/spf13/hugo/archive/v0.12.tar.gz"
+  sha1 "f0537942cde9645ee2d98aaaf927a80c79070e99"
 
   bottle do
-    sha1 "71713846fe6611c6059cbbb811c1bad69fe52a8e" => :mavericks
-    sha1 "f5a265c90d90a8d7c072dc62b7a4b51fe7685a6f" => :mountain_lion
-    sha1 "180267e5b98d62605531a3e9ce7e54088f855e08" => :lion
+    revision 1
+    sha1 "e892d9a0fb7c832fb7f24db8682d4775dfbcfd04" => :yosemite
+    sha1 "42ad7067cabf84b2015e8086eb84115fce3c0e58" => :mavericks
+    sha1 "f9c04d315507921b303aed2693438cbc9ef18ca1" => :mountain_lion
   end
 
   depends_on "go" => :build

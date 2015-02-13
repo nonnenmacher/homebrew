@@ -37,6 +37,7 @@ class VersionComparisonTests < Homebrew::TestCase
   def test_patchlevel
     assert_operator version('1.2.3-p34'), :>, version('1.2.3-p33')
     assert_operator version('1.2.3-p33'), :<, version('1.2.3-p34')
+    assert_operator version('1.2.3-p10'), :>, version('1.2.3-p9')
   end
 
   def test_HEAD
@@ -340,5 +341,25 @@ class VersionParsingTests < Homebrew::TestCase
   def test_aespipe_version_style
     assert_version_detected '2.4c',
       'http://loop-aes.sourceforge.net/aespipe/aespipe-v2.4c.tar.bz2'
+  end
+
+  def test_win_style
+    assert_version_detected '0.9.17',
+      'http://ftpmirror.gnu.org/libmicrohttpd/libmicrohttpd-0.9.17-w32.zip'
+    assert_version_detected '1.29',
+      'http://ftpmirror.gnu.org/libidn/libidn-1.29-win64.zip'
+  end
+
+  def test_with_arch
+    assert_version_detected '4.0.18-1',
+      'http://ftpmirror.gnu.org/mtools/mtools-4.0.18-1.i686.rpm'
+    assert_version_detected '5.5.7-5',
+      'http://ftpmirror.gnu.org/autogen/autogen-5.5.7-5.i386.rpm'
+    assert_version_detected '2.8',
+      'http://ftpmirror.gnu.org/libtasn1/libtasn1-2.8-x86.zip'
+    assert_version_detected '2.8',
+      'http://ftpmirror.gnu.org/libtasn1/libtasn1-2.8-x64.zip'
+    assert_version_detected '4.0.18',
+      'http://ftpmirror.gnu.org/mtools/mtools_4.0.18_i386.deb'
   end
 end

@@ -1,57 +1,15 @@
-require 'options'
-
-# This class holds the build-time options defined for a Formula,
-# and provides named access to those options during install.
 class BuildOptions
-  include Enumerable
-
-  attr_accessor :args
-  attr_accessor :universal
-  attr_reader :options
-
   def initialize(args, options)
-    @args = Options.coerce(args)
+    @args = args
     @options = options
   end
 
-  def initialize_copy(other)
-    super
-    @options = other.options.dup
-    @args = other.args.dup
-  end
-
-  def add name, description=nil
-    description ||= case name.to_s
-      when "universal" then "Build a universal binary"
-      when "32-bit" then "Build 32-bit only"
-      when "c++11" then "Build using C++11 mode"
-      end.to_s
-
-    @options << Option.new(name, description)
-  end
-
-  def empty?
-    @options.empty?
-  end
-
-  def each(*args, &block)
-    @options.each(*args, &block)
-  end
-
-  def as_flags
-    @options.as_flags
-  end
-
   def include? name
-    args.include? '--' + name
+    @args.include?("--#{name}")
   end
 
   def with? val
-    if val.respond_to?(:option_name)
-      name = val.option_name
-    else
-      name = val
-    end
+    name = val.respond_to?(:option_name) ? val.option_name : val
 
     if option_defined? "with-#{name}"
       include? "with-#{name}"
@@ -84,7 +42,7 @@ class BuildOptions
 
   # True if the user requested a universal build.
   def universal?
-    universal || include?("universal") && option_defined?("universal")
+    include?("universal") && option_defined?("universal")
   end
 
   # True if the user requested to enable C++11 mode.
@@ -100,11 +58,11 @@ class BuildOptions
   end
 
   def used_options
-    Options.new(@options & @args)
+    @options & @args
   end
 
   def unused_options
-    Options.new(@options - @args)
+    @options - @args
   end
 
   private

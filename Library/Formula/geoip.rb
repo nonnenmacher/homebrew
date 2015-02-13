@@ -1,24 +1,15 @@
-require "formula"
-
 class Geoip < Formula
   homepage "https://github.com/maxmind/geoip-api-c"
-
-  stable do
-    url "https://github.com/maxmind/geoip-api-c/archive/v1.6.2.tar.gz"
-    sha1 "aa9a91b61667b605f62964c613e15400cbca2cae"
-
-    # Download test data so `make check` works. Fixed in HEAD.
-    # See https://github.com/maxmind/geoip-api-c/commit/722707cc3a0adc06aec3e98bc36e7262f67ec0da
-    patch :DATA
-  end
+  url "https://github.com/maxmind/geoip-api-c/archive/v1.6.4.tar.gz"
+  sha1 "f478c60e810be1ba3e4df1e4a3b839b8c604122f"
 
   head "https://github.com/maxmind/geoip-api-c.git"
 
   bottle do
     cellar :any
-    sha1 "2a60e65d979e66b54a12534f8c11f7f4d8c81033" => :mavericks
-    sha1 "0c658d03041b1b3e7eb4c0196fb692020f0615b2" => :mountain_lion
-    sha1 "d35b588961572032297c353fa6e549e4b0086740" => :lion
+    sha1 "2e76cca3bd3d3e5d059a68c3bbbb418be4ec19ce" => :yosemite
+    sha1 "658aa954c6abe8b7864abb21eaa081edc4e5c408" => :mavericks
+    sha1 "c856d5a8237eb98627b0803ade799523e3d9be22" => :mountain_lion
   end
 
   depends_on "autoconf" => :build
@@ -54,11 +45,10 @@ class Geoip < Formula
     legacy_data = Pathname.new "#{HOMEBREW_PREFIX}/share/GeoIP"
     cp Dir["#{legacy_data}/*"], geoip_data if legacy_data.exist?
 
-    ["City", "Country"].each do |type|
-      full = Pathname.new "#{geoip_data}/GeoIP#{type}.dat"
-      next if full.exist? or full.symlink?
-      ln_s "GeoLite#{type}.dat", full
-    end
+    full = Pathname.new "#{geoip_data}/GeoIP.dat"
+    ln_s "GeoLiteCountry.dat", full unless full.exist? or full.symlink?
+    full = Pathname.new "#{geoip_data}/GeoIPCity.dat"
+    ln_s "GeoLiteCity.dat", full unless full.exist? or full.symlink?
   end
 
   test do
@@ -67,24 +57,3 @@ class Geoip < Formula
     system "#{bin}/geoiplookup", "-f", "GeoIP.dat", "8.8.8.8"
   end
 end
-
-__END__
-diff --git a/bootstrap b/bootstrap
-index 30fc0f9..f20f095 100755
---- a/bootstrap
-+++ b/bootstrap
-@@ -1,5 +1,14 @@
- #!/bin/sh
-
-+# dl the dat file if needed
-+DIR="$( cd "$( dirname "$0"  )" && pwd  )"
-+
-+# download geolite database for the tests
-+mkdir -p $DIR/data
-+if [ ! -f $DIR/data/GeoIP.dat  ]; then
-+      curl http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz | gzip -d > $DIR/data/GeoIP.dat
-+fi
-+
- # make sure  to use the installed libtool
- rm -f ltmain.sh
- autoreconf -fiv

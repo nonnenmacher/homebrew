@@ -1,23 +1,13 @@
-require 'formula'
-
 class Socat < Formula
-  homepage 'http://www.dest-unreach.org/socat/'
-  url 'http://www.dest-unreach.org/socat/download/socat-1.7.2.4.tar.bz2'
-  mirror 'http://ftp.de.debian.org/debian/pool/main/s/socat/socat_1.7.2.4.orig.tar.bz2'
-  sha1 '55650f3c4c1a5cdc323b2e6eece416b6303d39b5'
+  homepage "http://www.dest-unreach.org/socat/"
+  url "http://www.dest-unreach.org/socat/download/socat-1.7.3.0.tar.gz"
+  sha1 "c09ec6539647cebe8fccdfcf0f1ace1243231ec3"
 
   bottle do
     cellar :any
-    sha1 "2adcb868d02085a1750ae6d2cb737a133f46e758" => :mavericks
-    sha1 "7fbdafbdd205731de188c08f501816cf835ea9c8" => :mountain_lion
-    sha1 "57e25b005e2f3261861400adf34869460daf828d" => :lion
-  end
-
-  devel do
-    url 'http://www.dest-unreach.org/socat/download/socat-2.0.0-b7.tar.gz'
-    mirror 'http://fossies.org/linux/privat/socat-2.0.0-b7.tar.gz'
-    sha1 'b9ce176ab1ad974a0f01810b517d404214f40288'
-    patch :DATA
+    sha1 "1dbd28a373b01b68aa18882f27a4ad82a75cdcd6" => :yosemite
+    sha1 "af4f37fa4ac0083200f6ede2e740a35b69decc0e" => :mavericks
+    sha1 "1e756f77d2956ceea9ea454d62ef1ae58e90d1ad" => :mountain_lion
   end
 
   depends_on 'readline'
@@ -29,20 +19,3 @@ class Socat < Formula
     system "make install"
   end
 end
-
-__END__
-diff --git a/sysincludes.h b/sysincludes.h
-index ee25556..8a57422 100644
---- a/sysincludes.h
-+++ b/sysincludes.h
-@@ -5,6 +5,10 @@
- #ifndef __sysincludes_h_included
- #define __sysincludes_h_included 1
- 
-+#if __APPLE__
-+#define __APPLE_USE_RFC_3542 1
-+#endif
-+
- #if HAVE_LIMITS_H
- #include <limits.h>	/* USHRT_MAX */
- #endif

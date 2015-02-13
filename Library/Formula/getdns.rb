@@ -2,14 +2,15 @@ require "formula"
 
 class Getdns < Formula
   homepage "http://getdnsapi.net"
-  url "http://getdnsapi.net/dist/getdns-0.1.1.tar.gz"
-  sha1 "63abbf10f514c6125c4bee0d249b9c68a9e4f560"
+  url "http://getdnsapi.net/dist/getdns-0.1.6.tar.gz"
+  sha1 "675fe336b98de78d3b0f25c5d5e0005dc14021ca"
+
+  head "https://github.com/getdnsapi/getdns.git"
 
   bottle do
-    revision 1
-    sha1 "97d4143202cdcb3990f2eeac041c582db7d91a59" => :mavericks
-    sha1 "73e1978b90fcd971d6e49c55d2ed0c0e4638fee6" => :mountain_lion
-    sha1 "348ae9bb86398f484d2178104fc98b42963506eb" => :lion
+    sha1 "86879ca8d95414125287abc89393781bcd801f88" => :yosemite
+    sha1 "c826c175dc647cf68bd8ba12dcc9c78da232fb87" => :mavericks
+    sha1 "1c393a248ef0633265f1e40c335a6ddf1fd7794e" => :mountain_lion
   end
 
   depends_on "ldns"

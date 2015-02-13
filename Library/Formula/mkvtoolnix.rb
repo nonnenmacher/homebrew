@@ -1,5 +1,3 @@
-require "formula"
-
 class Ruby19 < Requirement
   fatal true
   default_formula "ruby"
@@ -25,8 +23,14 @@ end
 
 class Mkvtoolnix < Formula
   homepage "https://www.bunkus.org/videotools/mkvtoolnix/"
-  url "https://www.bunkus.org/videotools/mkvtoolnix/sources/mkvtoolnix-7.1.0.tar.xz"
-  sha1 "0327ca8ba67125836c0585dc6751bf4a8537926f"
+  url "https://www.bunkus.org/videotools/mkvtoolnix/sources/mkvtoolnix-7.6.0.tar.xz"
+  sha1 "458db5c8f9e9afbf5fb210ebb26b380cf553d88f"
+
+  bottle do
+    sha1 "f171e01dc4eb563b1b1ca66c1013562537110329" => :yosemite
+    sha1 "1cb96469c187908fc76c3032513110625cac2c3c" => :mavericks
+    sha1 "ba93d7a12f7a1fff861c777fed4df2645c6c7793" => :mountain_lion
+  end
 
   head do
     url "https://github.com/mbunkus/mkvtoolnix.git"
@@ -35,16 +39,19 @@ class Mkvtoolnix < Formula
     depends_on "libtool" => :build
   end
 
+  option "with-wxmac", "Build with wxWidgets GUI"
+  option "with-qt5", "Build with experimental QT GUI"
+
   depends_on "pkg-config" => :build
   depends_on Ruby19
   depends_on "libogg"
   depends_on "libvorbis"
-  depends_on "flac" => :optional
+  depends_on "flac" => :recommended
+  depends_on "libmagic" => :recommended
   depends_on "lzo" => :optional
-  depends_on "expat"
-  depends_on "gettext"
-  depends_on "pcre"
   depends_on "wxmac" => :optional
+  depends_on "qt5" => :optional
+  depends_on "gettext" => :optional
   # On Mavericks, the bottle (without c++11) can be used
   # because mkvtoolnix is linked against libc++ by default
   if MacOS.version >= "10.9"
@@ -62,9 +69,6 @@ class Mkvtoolnix < Formula
   def install
     ENV.cxx11
 
-    ENV["ZLIB_CFLAGS"] = "-I/usr/include"
-    ENV["ZLIB_LIBS"] = "-L/usr/lib -lz"
-
     boost = Formula["boost"]
     ogg = Formula["libogg"]
     vorbis = Formula["libvorbis"]
@@ -78,16 +82,23 @@ class Mkvtoolnix < Formula
 
     if build.with? "wxmac"
       wxmac = Formula["wxmac"]
-
       args << "--with-extra-includes=#{ogg.opt_include};#{vorbis.opt_include};#{wxmac.opt_include}"
       args << "--with-extra-libs=#{ogg.opt_lib};#{vorbis.opt_lib};#{wxmac.opt_lib}"
-      args << "--enable-gui"
-      args << "--enable-wxwidgets"
+      args << "--enable-gui" << "--enable-wxwidgets"
     else
       args << "--with-extra-includes=#{ogg.opt_include};#{vorbis.opt_include}"
       args << "--with-extra-libs=#{ogg.opt_lib};#{vorbis.opt_lib}"
-      args << "--disable-gui"
       args << "--disable-wxwidgets"
+    end
+
+    if build.with?("qt5")
+      qt5 = Formula["qt5"]
+
+      args << "--with-moc=#{qt5.opt_bin}/moc"
+      args << "--with-uic=#{qt5.opt_bin}/uic"
+      args << "--with-rcc=#{qt5.opt_bin}/rcc"
+      args << "--with-mkvtoolnix-gui"
+      args << "--enable-qt"
     end
 
     system "./autogen.sh" if build.head?
@@ -95,7 +106,7 @@ class Mkvtoolnix < Formula
     system "./configure", *args
 
     system "./drake", "-j#{ENV.make_jobs}"
-    system "./drake install"
+    system "./drake", "install"
   end
 
   test do

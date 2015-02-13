@@ -1,22 +1,31 @@
-require 'formula'
+require "formula"
 
 class Hevea < Formula
-  homepage 'http://hevea.inria.fr/'
-  url "http://hevea.inria.fr/distri/hevea-2.14.tar.gz"
-  sha1 "78152c83802e34881ce3414072d75bff66facb15"
+  homepage "http://hevea.inria.fr/"
+  url "http://hevea.inria.fr/distri/hevea-2.21.tar.gz"
+  sha1 "37a13c587f008d4376a7245c43beb52d567828dd"
 
   bottle do
-    sha1 "657486337d169647d9c10afb61516e38ae1bf772" => :mavericks
-    sha1 "0e1fe3dd6b1b21fbf435738f329473c1e6130e38" => :mountain_lion
-    sha1 "4766e826da52e595f679c699c836bcfb141dfdbd" => :lion
+    sha1 "2daa0f13092e445e793fa56fa2cd81ea6a075be8" => :yosemite
+    sha1 "3d9169aa9c0390541e12c69dd953944258bd0c71" => :mavericks
+    sha1 "634a57604d5d4e3c9f69cf32f2c2135575683158" => :mountain_lion
   end
 
-  depends_on 'objective-caml'
-  depends_on 'ghostscript' => :optional
+  depends_on "objective-caml"
+  depends_on "ghostscript" => :optional
 
   def install
-    inreplace 'Makefile', '/usr/local', prefix
+    ENV["PREFIX"] = prefix
     system "make"
-    system "make install"
+    system "make", "install"
+  end
+
+  test do
+    (testpath/"test.tex").write <<-EOS.undent
+      \\documentclass{article}
+      \\begin{document}
+      \\end{document}
+    EOS
+    system "#{bin}/hevea", "test.tex"
   end
 end

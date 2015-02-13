@@ -2,18 +2,23 @@ require 'formula'
 
 class Mariadb < Formula
   homepage 'http://mariadb.org/'
-  url "http://ftp.osuosl.org/pub/mariadb/mariadb-10.0.12/source/mariadb-10.0.12.tar.gz"
-  sha1 "226251b2312bbe3e4cdac1ee8a6830c6fe246f1b"
+  url "http://ftp.osuosl.org/pub/mariadb/mariadb-10.0.16/source/mariadb-10.0.16.tar.gz"
+  sha1 "5164537bf222657ab5e3f47315fae96522285af1"
 
   bottle do
-    revision 2
-    sha1 "b60cbc84375ec160e00ba55591cf548bc64f00d1" => :mavericks
-    sha1 "491d3df42dff381eed15d3503e51440a2e16692f" => :mountain_lion
-    sha1 "61265aabc1074ddafcc35f0694f6f255b6bcb441" => :lion
+    sha1 "5098b447222fbcb46069b3c1f56f17730a2471c8" => :yosemite
+    sha1 "48e948b01fecf27462503cf94d4d764b61c32c47" => :mavericks
+    sha1 "433a689752aee6fd9a753b1c35b4456bdb6c9369" => :mountain_lion
+  end
+
+  devel do
+    url "http://ftp.osuosl.org/pub/mariadb/mariadb-10.1.2/source/mariadb-10.1.2.tar.gz"
+    sha1 "56b035f31ec89f36555b7e7972efc5e5c4157f23"
   end
 
   depends_on 'cmake' => :build
   depends_on 'pidof' unless MacOS.version >= :mountain_lion
+  depends_on "openssl"
 
   option :universal
   option 'with-tests', 'Keep test when installing'
@@ -70,10 +75,6 @@ class Mariadb < Formula
 
     args << "-DWITH_UNIT_TESTS=OFF" if build.without? 'tests'
 
-    # oqgraph requires boost, but fails to compile against boost 1.54
-    # Upstream bug: https://mariadb.atlassian.net/browse/MDEV-4795
-    args << "-DWITHOUT_OQGRAPH_STORAGE_ENGINE=1"
-
     # Build the embedded server
     args << "-DWITH_EMBEDDED_SERVER=ON" if build.with? 'embedded'
 
@@ -81,10 +82,22 @@ class Mariadb < Formula
     args << "-DWITH_READLINE=yes" if build.without? 'libedit'
 
     # Compile with ARCHIVE engine enabled if chosen
-    args << "-DWITH_ARCHIVE_STORAGE_ENGINE=1" if build.with? 'archive-storage-engine'
+    if build.with? 'archive-storage-engine'
+      if build.stable?
+        args << "-DWITH_ARCHIVE_STORAGE_ENGINE=1"
+      else
+        args << "-DPLUGIN_ARCHIVE=YES"
+      end
+    end
 
     # Compile with BLACKHOLE engine enabled if chosen
-    args << "-DWITH_BLACKHOLE_STORAGE_ENGINE=1" if build.with? 'blackhole-storage-engine'
+    if build.with? 'blackhole-storage-engine'
+      if build.stable?
+        args << "-DWITH_BLACKHOLE_STORAGE_ENGINE=1"
+      else
+        args << "-DPLUGIN_BLACKHOLE=YES"
+      end
+    end
 
     # Make universal for binding to universal applications
     if build.universal?
@@ -105,26 +118,24 @@ class Mariadb < Formula
       s.gsub!("!includedir /etc/my.cnf.d", "!includedir #{etc}/my.cnf.d")
     end
 
-    unless build.include? 'client-only'
-      # Don't create databases inside of the prefix!
-      # See: https://github.com/Homebrew/homebrew/issues/4975
-      rm_rf prefix+'data'
+    # Don't create databases inside of the prefix!
+    # See: https://github.com/Homebrew/homebrew/issues/4975
+    rm_rf prefix+'data'
 
-      (prefix+'mysql-test').rmtree if build.without? 'tests' # save 121MB!
-      (prefix+'sql-bench').rmtree if build.without? 'bench'
+    (prefix+'mysql-test').rmtree if build.without? 'tests' # save 121MB!
+    (prefix+'sql-bench').rmtree if build.without? 'bench'
 
-      # Link the setup script into bin
-      bin.install_symlink prefix/"scripts/mysql_install_db"
+    # Link the setup script into bin
+    bin.install_symlink prefix/"scripts/mysql_install_db"
 
-      # Fix up the control script and link into bin
-      inreplace "#{prefix}/support-files/mysql.server" do |s|
-        s.gsub!(/^(PATH=".*)(")/, "\\1:#{HOMEBREW_PREFIX}/bin\\2")
-        # pidof can be replaced with pgrep from proctools on Mountain Lion
-        s.gsub!(/pidof/, 'pgrep') if MacOS.version >= :mountain_lion
-      end
-
-      bin.install_symlink prefix/"support-files/mysql.server"
+    # Fix up the control script and link into bin
+    inreplace "#{prefix}/support-files/mysql.server" do |s|
+      s.gsub!(/^(PATH=".*)(")/, "\\1:#{HOMEBREW_PREFIX}/bin\\2")
+      # pidof can be replaced with pgrep from proctools on Mountain Lion
+      s.gsub!(/pidof/, 'pgrep') if MacOS.version >= :mountain_lion
     end
+
+    bin.install_symlink prefix/"support-files/mysql.server"
   end
 
   def post_install

@@ -2,21 +2,23 @@ require "formula"
 
 class MongoC < Formula
   homepage "http://docs.mongodb.org/ecosystem/drivers/c/"
-  url "https://github.com/mongodb/mongo-c-driver/releases/download/0.98.0/mongo-c-driver-0.98.0.tar.gz"
-  sha1 "7265e5f7865687e2e1dd59a106e5170534dfa3e1"
+  url "https://github.com/mongodb/mongo-c-driver/releases/download/1.1.0/mongo-c-driver-1.1.0.tar.gz"
+  sha1 "9277fb0afcf595838da0d5e4715df1526d53e020"
 
   bottle do
     cellar :any
-    sha1 "2e4bb593b0a568a6d390f5eae5d56457bee739e8" => :mavericks
-    sha1 "e3b7459776bfde3a4d88816cf14ac636f66ab3ff" => :mountain_lion
-    sha1 "289d8fb5e3dbec51072b8903faaf08a92f165420" => :lion
+    sha1 "a1902585054a645fece9ef6e91a53258f3df0356" => :yosemite
+    sha1 "53858df7d3bb85e63d070754e2aa8f0e9576266f" => :mavericks
+    sha1 "b547c663729e6ec4944462c8d305643dd83d452f" => :mountain_lion
   end
 
   depends_on "pkg-config" => :build
   depends_on "libbson"
+  depends_on "openssl"
 
   def install
-    system "./configure", "--prefix=#{prefix}"
+    # --enable-sasl=no: https://jira.mongodb.org/browse/CDRIVER-447
+    system "./configure", "--prefix=#{prefix}", "--enable-sasl=no"
     system "make", "install"
   end
 end

@@ -4,14 +4,14 @@ class Mpd < Formula
   homepage "http://www.musicpd.org/"
 
   stable do
-    url "http://www.musicpd.org/download/mpd/0.18/mpd-0.18.12.tar.xz"
-    sha1 "99ba27a541cb18fcd093d93551d34c1c3145ba49"
+    url "http://www.musicpd.org/download/mpd/0.19/mpd-0.19.9.tar.xz"
+    sha1 "6683bee5f132eda318c5a61ec14b2df8d9164d60"
   end
 
   bottle do
-    sha1 "ab143fb0d51c515e3843f5d9ec94049c38dee147" => :mavericks
-    sha1 "3a9031df83d678a8bfe8ee3a44df5fb9582acacd" => :mountain_lion
-    sha1 "a378b8824edd4324823a6be70cbb6ff301ecc90d" => :lion
+    sha1 "dded981259ff9d3529b311f8fd48f3713a4e5811" => :yosemite
+    sha1 "8b2252c6fb581ed97ea95d16b953b1a64d0c6f02" => :mavericks
+    sha1 "2a3c681188f7db786f61b053aa0813549838718a" => :mountain_lion
   end
 
   head do
@@ -25,20 +25,19 @@ class Mpd < Formula
   option "with-lame", "Build with lame support (for MP3 encoding when streaming)"
   option "with-two-lame", "Build with two-lame support (for MP2 encoding when streaming)"
   option "with-flac", "Build with flac support (for Flac encoding when streaming)"
-  option "with-vorbis", "Build with vorbis support (for Ogg encoding)"
+  option "with-libvorbis", "Build with vorbis support (for Ogg encoding)"
   option "with-yajl", "Build with yajl support (for playing from soundcloud)"
+  option "with-opus", "Build with opus support (for Opus encoding and decoding)"
 
-  if MacOS.version < :lion
-    option "with-libwrap", "Build with libwrap (TCP Wrappers) support"
-  elsif MacOS.version == :lion
-    option "with-libwrap", "Build with libwrap (TCP Wrappers) support (buggy)"
-  end
+  deprecated_option "with-vorbis" => "with-libvorbis"
 
   depends_on "pkg-config" => :build
+  depends_on "boost" => :build
   depends_on "glib"
   depends_on "libid3tag"
   depends_on "sqlite"
   depends_on "libsamplerate"
+  depends_on "icu4c"
 
   needs :cxx11
 
@@ -57,24 +56,14 @@ class Mpd < Formula
   depends_on "libmms" => :optional      # MMS input
   depends_on "libzzip" => :optional     # Reading from within ZIPs
   depends_on "yajl" => :optional        # JSON library for SoundCloud
-
-  depends_on "libvorbis" if build.with? "vorbis" # Vorbis support
+  depends_on "opus" => :optional        # Opus support
+  depends_on "libvorbis" => :optional
 
   def install
     # mpd specifies -std=gnu++0x, but clang appears to try to build
     # that against libstdc++ anyway, which won't work.
     # The build is fine with G++.
     ENV.libcxx
-
-    if build.include? "lastfm" or build.include? "libwrap" \
-       or build.include? "enable-soundcloud"
-      opoo "You are using an option that has been replaced."
-      opoo "See this formula's caveats for details."
-    end
-
-    if build.with? "libwrap" and MacOS.version > :lion
-      opoo "Ignoring --with-libwrap: TCP Wrappers were removed in OSX 10.8"
-    end
 
     system "./autogen.sh" if build.head?
 
@@ -86,6 +75,7 @@ class Mpd < Formula
       --enable-ffmpeg
       --enable-fluidsynth
       --enable-osx
+      --disable-libwrap
     ]
 
     args << "--disable-mad"
@@ -93,28 +83,38 @@ class Mpd < Formula
 
     args << "--enable-zzip" if build.with? "libzzip"
     args << "--enable-lastfm" if build.with? "lastfm"
-    args << "--disable-libwrap" if build.without? "libwrap"
     args << "--disable-lame-encoder" if build.without? "lame"
     args << "--disable-soundcloud" if build.without? "yajl"
-    args << "--enable-vorbis-encoder" if build.with? "vorbis"
+    args << "--enable-vorbis-encoder" if build.with? "libvorbis"
 
     system "./configure", *args
     system "make"
-    ENV.j1 # Directories are created in parallel, so let"s not do that
+    ENV.j1 # Directories are created in parallel, so let's not do that
     system "make install"
   end
 
-  def caveats; <<-EOS.undent
-      As of mpd-0.17.4, this formula no longer enables support for streaming
-      output by default. If you want streaming output, you must now specify
-      the --with-libshout, --with-lame, --with-two-lame, and/or --with-flac
-      options explicitly. (Use '--with-libshout --with-lame --with-flac' for
-      the pre-0.17.4 behavior.)
+  plist_options :manual => "mpd"
 
-      As of mpd-0.17.4, this formula has renamed options as follows:
-        --lastfm            -> --with-lastfm
-        --libwrap           -> --with-libwrap (unsupported in OSX >= 10.8)
-        --enable-soundcloud -> --with-yajl
+  def plist; <<-EOS.undent
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0">
+    <dict>
+        <key>Label</key>
+        <string>#{plist_name}</string>
+        <key>WorkingDirectory</key>
+        <string>#{HOMEBREW_PREFIX}</string>
+        <key>ProgramArguments</key>
+        <array>
+            <string>#{opt_bin}/mpd</string>
+            <string>--no-daemon</string>
+        </array>
+        <key>RunAtLoad</key>
+        <true/>
+        <key>KeepAlive</key>
+        <true/>
+    </dict>
+    </plist>
     EOS
   end
 end

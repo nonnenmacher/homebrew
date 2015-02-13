@@ -1,5 +1,4 @@
 #!/System/Library/Frameworks/Ruby.framework/Versions/Current/usr/bin/ruby -W0
-# encoding: UTF-8
 
 std_trap = trap("INT") { exit! 130 } # no backtrace thanks
 
@@ -83,7 +82,7 @@ begin
              }
 
   empty_argv = ARGV.empty?
-  help_regex = /(-h$|--help$|--usage$|-\?$|help$)/
+  help_regex = /(-h$|--help$|--usage$|-\?$|^help$)/
   help_flag = false
   cmd = nil
 
@@ -108,7 +107,12 @@ begin
   end
 
   # Add contributed commands to PATH before checking.
-  ENV['PATH'] += "#{File::PATH_SEPARATOR}#{HOMEBREW_CONTRIB}/cmd"
+  Dir["#{HOMEBREW_LIBRARY}/Taps/*/*/cmd"].each do |tap_cmd_dir|
+    ENV["PATH"] += "#{File::PATH_SEPARATOR}#{tap_cmd_dir}"
+  end
+
+  # Add SCM wrappers.
+  ENV["PATH"] += "#{File::PATH_SEPARATOR}#{HOMEBREW_LIBRARY}/ENV/scm"
 
   internal_cmd = require? HOMEBREW_LIBRARY_PATH.join("cmd", cmd) if cmd
 

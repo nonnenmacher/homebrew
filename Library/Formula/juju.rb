@@ -2,23 +2,22 @@ require 'formula'
 
 class Juju < Formula
   homepage 'https://juju.ubuntu.com'
-  url 'https://launchpad.net/juju-core/1.20/1.20.1/+download/juju-core_1.20.1.tar.gz'
-  sha1 'bdf806e0b3390fdb1a2503a663aeaa8b58ead696'
+  url 'https://launchpad.net/juju-core/1.21/1.21.1/+download/juju-core_1.21.1.tar.gz'
+  sha1 '760281b70c33b6f7fd2c24525d9a892a3deec5df'
 
   bottle do
-    sha1 "8c0220660c2bafa5783eeffbbb7e6d2139e8dcb4" => :mavericks
-    sha1 "fc40f33c6ba96ab9a35259bae4bc6618f7792183" => :mountain_lion
-    sha1 "64445f9c4d3019d150065b66245426f87d48540c" => :lion
+    sha1 "fd2f07e8df8cb63c19121e6f73cce7dda8e3a72d" => :yosemite
+    sha1 "ff71ae1fe7c28eb0e13e65f917123b7214e23d16" => :mavericks
+    sha1 "81eabb39070e65f598382e3aa9dda43eacd1c8be" => :mountain_lion
   end
 
   depends_on 'go' => :build
 
   def install
-    ENV['GOPATH'] = buildpath
-    args = %w(install github.com/juju/juju/cmd/juju)
-    args.insert(1, "-v") if ARGV.verbose?
-    system "go", *args
-    bin.install 'bin/juju'
+    ENV["GOPATH"] = buildpath
+    system "go", "build", "github.com/juju/juju/cmd/juju"
+    system "go", "build", "github.com/juju/juju/cmd/plugins/juju-metadata"
+    bin.install "juju", "juju-metadata"
     bash_completion.install "src/github.com/juju/juju/etc/bash_completion.d/juju-core"
   end
 

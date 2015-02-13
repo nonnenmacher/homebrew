@@ -1,10 +1,8 @@
-require "formula"
-
 class Nvm < Formula
   homepage "https://github.com/creationix/nvm"
   head "https://github.com/creationix/nvm.git"
-  url "https://github.com/creationix/nvm/archive/v0.12.2.tar.gz"
-  sha1 "8891eb13500cf379a3b5475e8903a313eaac4bb9"
+  url "https://github.com/creationix/nvm/archive/v0.23.3.tar.gz"
+  sha1 "f40c9e766fb98ff32987944063c2b9b4a203b954"
 
   def install
     prefix.install "nvm.sh"
@@ -12,15 +10,15 @@ class Nvm < Formula
   end
 
   def caveats; <<-EOS.undent
+      Add NVM's working directory to your $HOME path (if it doesn't exist):
+
+        mkdir ~/.nvm
+
       Add the following to $HOME/.bashrc, $HOME/.zshrc, or your shell's
       equivalent configuration file:
 
-        source $(brew --prefix nvm)/nvm.sh
-
-      Node installs will be lost upon upgrading nvm. Add the following above
-      the source line to move install location and prevent this:
-
         export NVM_DIR=~/.nvm
+        source $(brew --prefix nvm)/nvm.sh
 
       Type `nvm help` for further information.
     EOS

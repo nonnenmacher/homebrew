@@ -1,15 +1,15 @@
-require "formula"
-
 class Libressl < Formula
   homepage "http://www.libressl.org/"
-  url "http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-2.0.3.tar.gz"
-  mirror "http://mirrors.nycbug.org/pub/OpenBSD/LibreSSL/libressl-2.0.3.tar.gz"
-  sha256 "dfd53b78803c25cb50083dd1f8f773a924dc31cdd9de396eeae4120c14aae2d4"
+  url "http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-2.1.3.tar.gz"
+  mirror "https://raw.githubusercontent.com/DomT4/LibreMirror/master/LibreSSL/libressl-2.1.3.tar.gz"
+  sha256 "eb2f370971408fb10af6453e556465c8eee728ac333bf1eb47ec1a5112304f7c"
+
+  option "without-libtls", "Build without libtls"
 
   bottle do
-    sha1 "c24b27d8d48eaab61681e7fdf85f3e63ba7ed263" => :mavericks
-    sha1 "281e490788a7310d4ca62170ad185e3206ffcfd2" => :mountain_lion
-    sha1 "40795697ae67eb206b5e36e7864534e246eb0f47" => :lion
+    sha1 "a27d907fe3d72f735b2c546fb470b5794dadb731" => :yosemite
+    sha1 "880ef498373994ac459e026d7e2e48d3145653a8" => :mavericks
+    sha1 "8ebe481e3399d1e833e293caf90bf6936a286145" => :mountain_lion
   end
 
   head do
@@ -19,23 +19,46 @@ class Libressl < Formula
     depends_on "libtool" => :build
   end
 
-  keg_only "LibreSSL is not linked to prevent conflicts with the system OpenSSL."
+  keg_only "LibreSSL is not linked to prevent conflict with the system OpenSSL."
 
   def install
+    args = %W[
+      --disable-dependency-tracking
+      --disable-silent-rules
+      --prefix=#{prefix}
+      --with-openssldir=#{etc}/libressl
+      --sysconfdir=#{etc}/libressl
+      --with-enginesdir=#{lib}/engines
+    ]
+
+    args << "--enable-libtls" if build.with? "libtls"
+
     system "./autogen.sh" if build.head?
-
-    system "./configure", "--disable-dependency-tracking",
-                          "--disable-silent-rules",
-                          "--prefix=#{prefix}",
-                          "--with-openssldir=#{etc}/libressl",
-                          "--with-enginesdir=#{lib}/engines"
-
+    system "./configure", *args
     system "make"
     system "make", "check"
     system "make", "install"
 
+    # Install the dummy openssl.cnf file to stop runtime warnings.
     mkdir_p "#{etc}/libressl"
-    touch "#{etc}/libressl/openssl.cnf"
+    cp "apps/openssl.cnf", "#{etc}/libressl"
+  end
+
+  def post_install
+    keychains = %w[
+      /Library/Keychains/System.keychain
+      /System/Library/Keychains/SystemRootCertificates.keychain
+    ]
+
+    # Bootstrap CAs from the system keychain.
+    (etc/"libressl/cert.pem").atomic_write `security find-certificate -a -p #{keychains.join(" ")}`
+  end
+
+  def caveats; <<-EOS.undent
+    A CA file has been bootstrapped using certificates from the system
+    keychain. To add additional certificates, place .pem files in
+      #{etc}/libressl
+    EOS
   end
 
   test do

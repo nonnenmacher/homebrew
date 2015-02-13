@@ -1,10 +1,15 @@
-require "formula"
-
 class Clojurescript < Formula
   homepage "https://github.com/clojure/clojurescript"
   head "https://github.com/clojure/clojurescript.git"
-  url "https://github.com/clojure/clojurescript/archive/r2268.tar.gz"
-  sha1 "ce3d52d9e374164cc8ac4a8d0ed2e6cf389c8da5"
+  url "https://github.com/clojure/clojurescript/archive/r2760.tar.gz"
+  sha1 "c07900e9f63af89954722661f9a817ca9ea3417b"
+
+  bottle do
+    cellar :any
+    sha1 "28b50ad7793132d46dbec7821243b8e0cad332ed" => :yosemite
+    sha1 "6ad254ec5f8ab2e66de53dbf6240ff29703a6c1b" => :mavericks
+    sha1 "b090510a461c9e1274590e2840640c2195f9969e" => :mountain_lion
+  end
 
   def install
     system "./script/bootstrap"
@@ -21,6 +26,12 @@ class Clojurescript < Formula
   end
 
   test do
-    system "#{bin}/cljsc"
+    (testpath/"t.cljs").write <<-EOF.undent
+    (ns hello)
+    (defn ^:export greet [n]
+      (str "Hello " n))
+    EOF
+
+    system "#{bin}/cljsc", testpath/"t.cljs"
   end
 end

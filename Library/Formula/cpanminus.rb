@@ -1,13 +1,15 @@
-require "formula"
-
 class Cpanminus < Formula
   homepage "https://github.com/miyagawa/cpanminus"
-  url "https://github.com/miyagawa/cpanminus/archive/1.7004.tar.gz"
-  sha1 "2430c8e8249446de29addc64409cdd9b9408c929"
+  url "https://github.com/miyagawa/cpanminus/archive/1.7024.tar.gz"
+  sha1 "9b905ecd906a5afe7340035475d11c15a54ebd35"
 
   head "https://github.com/miyagawa/cpanminus.git"
 
   def install
     bin.install "cpanm"
+  end
+
+  test do
+    system "#{bin}/cpanm", "-V"
   end
 end

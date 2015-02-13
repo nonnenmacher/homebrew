@@ -2,31 +2,31 @@ require 'formula'
 
 class Scala < Formula
   homepage 'http://www.scala-lang.org/'
-  url 'http://www.scala-lang.org/files/archive/scala-2.11.2.tgz'
-  sha1 '904e9ee3bb96e8350b1e0f2502a704f836c0cdf1'
+  url 'http://www.scala-lang.org/files/archive/scala-2.11.5.tgz'
+  sha1 '10820b7d65727fe8d3d67855ef603c425cf65a4e'
 
   bottle do
     cellar :any
-    sha1 "da4919e3f11b1d10923e12c20ba50f738db58380" => :mavericks
-    sha1 "15ecc67ac62795c1ae7a9fae01838bea412df6ec" => :mountain_lion
-    sha1 "10784c54d59746277a6f0535ef9d3ff4974fad56" => :lion
+    sha1 "c674657e9b8382af550f839bcd033fa231e3c3ff" => :yosemite
+    sha1 "e0182002187718227972d884057a78784f78d308" => :mavericks
+    sha1 "dc90d4a32d6ad90cc3e40070d139c7390f84d77b" => :mountain_lion
   end
 
   option 'with-docs', 'Also install library documentation'
   option 'with-src', 'Also install sources for IDE support'
 
   resource 'docs' do
-    url 'http://www.scala-lang.org/files/archive/scala-docs-2.11.2.zip'
-    sha1 '2add2130989c3434b8f6ef30f05ed3dd98ab156a'
+    url 'http://www.scala-lang.org/files/archive/scala-docs-2.11.5.zip'
+    sha1 '4a6856a822fbdda7b76674e999a70666d0cdfc3a'
   end
 
   resource 'src' do
-    url 'https://github.com/scala/scala/archive/v2.11.2.tar.gz'
-    sha1 '52654124565a1706e9e6d0ad7b0969d319628847'
+    url 'https://github.com/scala/scala/archive/v2.11.5.tar.gz'
+    sha1 '065fbaa0b982256c84df20d444dff03368332b38'
   end
 
   resource 'completion' do
-    url 'https://raw.githubusercontent.com/scala/scala-dist/v2.11.2/bash-completion/src/main/resources/completion.d/2.9.1/scala'
+    url 'https://raw.githubusercontent.com/scala/scala-dist/v2.11.4/bash-completion/src/main/resources/completion.d/2.9.1/scala'
     sha1 'e2fd99fe31a9fb687a2deaf049265c605692c997'
   end
 
@@ -43,7 +43,7 @@ class Scala < Formula
     # Set up an IntelliJ compatible symlink farm in 'idea'
     idea = prefix/'idea'
     idea.install_symlink libexec/'src', libexec/'lib'
-    (idea/'doc/scala-devel-docs').install_symlink doc => 'api'
+    idea.install_symlink doc => 'doc'
   end
 
   def caveats; <<-EOS.undent

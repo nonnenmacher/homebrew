@@ -1,19 +1,17 @@
-require "formula"
-
 class Emscripten < Formula
-  homepage "http://emscripten.org"
-  url "https://github.com/kripken/emscripten/archive/1.21.1.tar.gz"
-  sha1 "198c32b7e49ce640ad7a17506ce99cb1b044de06"
-
-  head "https://github.com/kripken/emscripten.git", :branch => "incoming"
+  homepage "https://kripken.github.io/emscripten-site/"
+  url "https://github.com/kripken/emscripten/archive/1.29.6.tar.gz"
+  sha1 "fa8fe3c844b7b1f9b4afd928c2f6f083843be69b"
 
   bottle do
-    sha1 "f7e6beff033508e544e43f2103a81cd2389fa3b8" => :mavericks
-    sha1 "6beed81c6749348339649bb9b30f1bf687b9a4de" => :mountain_lion
-    sha1 "a3127fd2bb4996f022ab1e73f86a15b923ca3a3a" => :lion
+    sha1 "e0cfe1c9d8bc969814281c2d8dffe2323d750259" => :yosemite
+    sha1 "39cf18caf1c8483fe0fa9d86dc42652544972b41" => :mavericks
+    sha1 "ecf68dab9122422f61d8dbec3023e0df5d562b17" => :mountain_lion
   end
 
   head do
+    url "https://github.com/kripken/emscripten.git", :branch => "incoming"
+
     resource "fastcomp" do
       url "https://github.com/kripken/emscripten-fastcomp.git", :branch => "incoming"
     end
@@ -25,21 +23,25 @@ class Emscripten < Formula
 
   stable do
     resource "fastcomp" do
-      url "https://github.com/kripken/emscripten-fastcomp/archive/1.21.0.tar.gz"
-      sha1 "d468ca3ea4b3ed02b3e20ba86b781f028c2514b0"
+      url "https://github.com/kripken/emscripten-fastcomp/archive/1.29.6.tar.gz"
+      sha1 "e4243795347b641367c330867a097c0616f2553e"
     end
 
     resource "fastcomp-clang" do
-      url "https://github.com/kripken/emscripten-fastcomp-clang/archive/1.21.0.tar.gz"
-      sha1 "7974f7cc0646534fd226ae447b962a11d77a7c03"
+      url "https://github.com/kripken/emscripten-fastcomp-clang/archive/1.29.6.tar.gz"
+      sha1 "c1f61a952898f199a024a550a520abf1babe4aff"
     end
   end
 
+  needs :cxx11
+
+  depends_on :python if MacOS.version <= :snow_leopard
   depends_on "node"
   depends_on "closure-compiler" => :optional
   depends_on "yuicompressor"
 
   def install
+    ENV.cxx11
     # OSX doesn't provide a "python2" binary so use "python" instead.
     python2_shebangs = `grep --recursive --files-with-matches ^#!/usr/bin/.*python2$ #{buildpath}`
     python2_shebang_files = python2_shebangs.lines.sort.uniq
@@ -80,7 +82,8 @@ class Emscripten < Formula
   end
 
   def caveats; <<-EOS.undent
-    Manually set LLVM_ROOT to \"#{opt_prefix}/libexec/llvm/bin\"
+    Manually set LLVM_ROOT to
+      #{opt_libexec}/llvm/bin
     in ~/.emscripten after running `emcc` for the first time.
     EOS
   end

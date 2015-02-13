@@ -2,25 +2,32 @@ require "formula"
 
 class Phantomjs < Formula
   homepage "http://www.phantomjs.org/"
-  url "https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.7-source.zip"
-  sha1 "124b017d493d5ccabd22afaf078d0650ac048840"
+
+  stable do
+    url "https://github.com/ariya/phantomjs/archive/2.0.0.tar.gz"
+    sha256 "0a1338464ca37314037d139b3e0f7368325f5d8810628d9d9f2df9f9f535d407"
+  end
 
   bottle do
     cellar :any
-    revision 1
-    sha1 "3f775a08beeee3c2ec1f491b9621e1ec93ace92a" => :mavericks
-    sha1 "e3a2b1e5a77afea0b3d8913dfa3f791eee3aab9c" => :mountain_lion
-    sha1 "273dbe33d1edbdd034c903d919278d33d7ebe5dd" => :lion
+    sha1 "f9dd71edb662479e0f832379368d4cd4878f940e" => :yosemite
+    sha1 "817ab92d4bfcd5496cf1c59173d48976610e5f70" => :mavericks
+    sha1 "887a96e55f67a3d350bc40f910926286c6cea240" => :mountain_lion
   end
 
+  # Qt Yosemite build fix. Upstream commit/PR:
+  # https://qt.gitorious.org/qt/qtbase/commit/70e442
+  # https://github.com/ariya/phantomjs/pull/12934
   patch do
-    url "https://github.com/ariya/phantomjs/commit/fe6a96.diff"
-    sha1 "d3efd38e0f3f0da08530d0bf603ea72ebdf06b78"
+    url "https://gist.githubusercontent.com/mikemcquaid/db645f7cbeec4f3b1b2e/raw/e664ecc5c259344d5a73a84b52e472bf8ad3733e/phantomjs-yosemite.patch"
+    sha1 "1e723f055ef5df9a2945cbce3e70322105313f47"
   end
+
+  head "https://github.com/ariya/phantomjs.git"
 
   def install
-    inreplace "src/qt/preconfig.sh", "-arch x86", "-arch x86_64" if MacOS.prefer_64_bit?
-    system "./build.sh", "--confirm", "--jobs", ENV.make_jobs
+    system "./build.sh", "--confirm", "--jobs", ENV.make_jobs,
+      "--qt-config", "-openssl-linked"
     bin.install "bin/phantomjs"
     (share+"phantomjs").install "examples"
   end

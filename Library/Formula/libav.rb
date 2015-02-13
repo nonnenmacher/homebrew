@@ -1,16 +1,14 @@
-require "formula"
-
 class Libav < Formula
   homepage "https://libav.org/"
-  url "https://libav.org/releases/libav-10.2.tar.xz"
-  sha1 "1e0b62d8414e43c1498fa0707e20111ca82fb04e"
+  url "https://libav.org/releases/libav-11.2.tar.xz"
+  sha1 "52ba52cabe5d86b45ce62f56e11fa7912c6e5083"
 
   head "git://git.libav.org/libav.git"
 
   bottle do
-    sha1 "95038ff0028f5557fc185a39963199e473c8bebc" => :mavericks
-    sha1 "0efc6b925e4581e7a7aedbfd9d57f6acbf0218c3" => :mountain_lion
-    sha1 "005750c5d80aa19231d9ccba4c6e4fb215c0e5b5" => :lion
+    sha1 "7c3f6d6c2510250f6719e8a5296c9c3de317854e" => :yosemite
+    sha1 "7c1495d6c2a4826843f5c0ce13ce75204ac2a284" => :mavericks
+    sha1 "764442e2f6be9bb482809948448c7c21e55bf7bb" => :mountain_lion
   end
 
   option "without-faac", "Disable AAC encoder via faac"
@@ -18,7 +16,7 @@ class Libav < Formula
   option "without-x264", "Disable H.264 encoder via x264"
   option "without-xvid", "Disable Xvid MPEG-4 video encoder via xvid"
 
-  option "with-opencore-amr", "Enable AMR-NB de/encoding and AMR-WB decoding " +
+  option "with-opencore-amr", "Enable AMR-NB de/encoding and AMR-WB decoding " \
     "via libopencore-amrnb and libopencore-amrwb"
   option "with-openjpeg", "Enable JPEG 2000 de/encoding via OpenJPEG"
   option "with-openssl", "Enable SSL support"
@@ -62,15 +60,15 @@ class Libav < Formula
     args = [
       "--disable-debug",
       "--disable-shared",
+      "--disable-indev=jack",
       "--prefix=#{prefix}",
-      "--enable-doc",
       "--enable-gpl",
       "--enable-nonfree",
       "--enable-version3",
-      "--enable-zlib",
+      "--enable-vda",
       "--cc=#{ENV.cc}",
       "--host-cflags=#{ENV.cflags}",
-      "--host-ldflags=#{ENV.ldflags}"
+      "--host-ldflags=#{ENV.ldflags}",
     ]
 
     args << "--enable-frei0r" if build.with? "frei0r"
@@ -98,8 +96,8 @@ class Libav < Formula
 
     system "make"
 
-    bin.install "avconv", "avprobe", "avserver"
-    man1.install "doc/avconv.1", "doc/avprobe.1", "doc/avserver.1"
+    bin.install "avconv", "avprobe"
+    man1.install "doc/avconv.1", "doc/avprobe.1"
     if build.with? "sdl"
       bin.install "avplay"
       man1.install "doc/avplay.1"
@@ -107,6 +105,9 @@ class Libav < Formula
   end
 
   test do
-    system "#{bin}/avconv -h"
+    # Create an example mp4 file
+    system "#{bin}/avconv", "-y", "-filter_complex",
+        "testsrc=rate=1:duration=1", "#{testpath}/video.mp4"
+    assert (testpath/"video.mp4").exist?
   end
 end

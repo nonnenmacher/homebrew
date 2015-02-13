@@ -1,14 +1,19 @@
-require "formula"
-
 class Trafficserver < Formula
   homepage "http://trafficserver.apache.org/"
-  url "http://www.apache.org/dyn/closer.cgi?path=trafficserver/trafficserver-4.2.1.1.tar.bz2"
-  mirror "http://archive.apache.org/dist/trafficserver/trafficserver-4.2.1.1.tar.bz2"
-  sha1 "1cd542a52ac7ed71ae95ec40d0076c45df0c5f27"
+  url "http://www.apache.org/dyn/closer.cgi?path=trafficserver/trafficserver-5.1.2.tar.bz2"
+  mirror "http://archive.apache.org/dist/trafficserver/trafficserver-5.1.2.tar.bz2"
+  sha1 "907edeebd3a10d4787ad550e735ea196f03deb04"
 
+  bottle do
+    sha1 "325ab9eb8e222bbe5ef940506ff9b08b70290f49" => :yosemite
+    sha1 "290456e3c321683b93552c4cc718a85456fed663" => :mavericks
+    sha1 "4c46bba84d3dc150b1cfd841d6c2d4e6f7c39950" => :mountain_lion
+  end
+
+  depends_on "openssl"
   depends_on "pcre"
 
-  #remove some amd64 compiler options that fail on Snow Leopard
+  # remove some amd64 compiler options that fail on Snow Leopard
   patch :DATA if MacOS.version == :snow_leopard
 
   def install
@@ -18,9 +23,9 @@ class Trafficserver < Formula
     ENV.append_to_cflags "-Wno-deprecated-declarations"
     system "./configure", "--prefix=#{prefix}",
                           "--mandir=#{man}",
-                          "--with-user=#{ENV['USER']}",
+                          "--with-user=#{ENV["USER"]}",
                           "--with-group=admin"
-    system "make install"
+    system "make", "install"
   end
 
   test do

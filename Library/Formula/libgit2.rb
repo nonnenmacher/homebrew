@@ -1,27 +1,35 @@
-require 'formula'
-
 class Libgit2 < Formula
-  homepage 'http://libgit2.github.com/'
-  url 'https://github.com/libgit2/libgit2/archive/v0.21.0.tar.gz'
-  sha1 '1534ecba1116ce8866e980499b2a3b5e67909bee'
+  homepage "https://libgit2.github.com/"
+  url "https://github.com/libgit2/libgit2/archive/v0.22.0.tar.gz"
+  sha1 "a37dc29511422eec9828e129ad057e77ca962c5e"
 
-  head 'https://github.com/libgit2/libgit2.git', :branch => 'development'
+  head "https://github.com/libgit2/libgit2.git"
 
   bottle do
     cellar :any
-    sha1 "5d71aa92ca16c0e792d134c1b93d4c55fd1fb2c5" => :mavericks
-    sha1 "d62717c452965b9d90e1fb6142d62ff6f47b6403" => :mountain_lion
-    sha1 "36f85d4daa70f51a77e99232167e210b98662169" => :lion
+    sha1 "f38b591523f02a8d3310ec203f1ab7d2c6d825e4" => :yosemite
+    sha1 "ecfdcf794a06e2e501c2c95ca72cdc0f0a97c3ba" => :mavericks
+    sha1 "0daa906f4cf15f9e9de9637c41c0e600aae36c4b" => :mountain_lion
   end
 
-  depends_on 'cmake' => :build
+  option :universal
+
+  depends_on "cmake" => :build
+  depends_on "libssh2" => :optional
+  depends_on "openssl"
 
   def install
-    mkdir 'build' do
-      system "cmake", "..",
-                      "-DBUILD_TESTS=NO",
-                      *std_cmake_args
-      system "make install"
+    args = std_cmake_args
+    args << "-DBUILD_CLAR=NO" # Don't build tests.
+
+    if build.universal?
+      ENV.universal_binary
+      args << "-DCMAKE_OSX_ARCHITECTURES=#{Hardware::CPU.universal_archs.as_cmake_arch_flags}"
+    end
+
+    mkdir "build" do
+      system "cmake", "..", *args
+      system "make", "install"
     end
   end
 end

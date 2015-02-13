@@ -1,36 +1,40 @@
-require 'formula'
-
 # Major releases of erlang should typically start out as separate formula in
 # Homebrew-versions, and only be merged to master when things like couchdb and
 # elixir are compatible.
 class Erlang < Formula
-  homepage 'http://www.erlang.org'
-  # Download tarball from GitHub; it is served faster than the official tarball.
-  url "https://github.com/erlang/otp/archive/OTP-17.1.tar.gz"
-  sha1 "f983a14152948a23418133155b5f9ba070544292"
+  homepage "http://www.erlang.org"
 
-  head 'https://github.com/erlang/otp.git', :branch => 'master'
+  stable do
+    # Download tarball from GitHub; it is served faster than the official tarball.
+    url "https://github.com/erlang/otp/archive/OTP-17.4.1.tar.gz"
+    sha256 "3ff545f086c541d1d5fefc9777ed5ddc93f3a20bf30d93f38399fba417ccf58e"
+  end
+
+  head "https://github.com/erlang/otp.git"
 
   bottle do
-    sha1 "5b36fc7bff7ddb0e4fb3ab220d5a1071e42b71ba" => :mavericks
-    sha1 "9f2620304d3b00110c9836fefb3aef69e5071170" => :mountain_lion
-    sha1 "c511b8f0706de912124258d5e1066850de8a59b3" => :lion
+    sha1 "6194f633e00ffb805b514ace20ba4d12f51a4e33" => :yosemite
+    sha1 "a6a667c269d067717465de2cc7a3e0cf0901202f" => :mavericks
+    sha1 "cbea1cc87f07cc262cde7ae06ebe55963db8baec" => :mountain_lion
   end
 
   resource "man" do
-    url "http://www.erlang.org/download/otp_doc_man_17.1.tar.gz"
-    sha1 "c23cc3c9d4b9ba5d1a61b2156be0edd16ce6144d"
+    url "http://www.erlang.org/download/otp_doc_man_17.4.tar.gz"
+    sha256 "6c1cdb8e9d367c7b6dc6b20706de9fd0a0f0b7dffd66532663b2a24ed7679a58"
   end
 
   resource "html" do
-    url "http://www.erlang.org/download/otp_doc_html_17.1.tar.gz"
-    sha1 "6a8af3937fc87450b0c1acf4a35d311fd8042bf9"
+    url "http://www.erlang.org/download/otp_doc_html_17.4.tar.gz"
+    sha256 "dd42b0104418de18e2247608a337bcd3bb24c59bbc36294deb5fae73ab6c90d6"
   end
 
-  option 'disable-hipe', "Disable building hipe; fails on various OS X systems"
-  option 'with-native-libs', 'Enable native library compilation'
-  option 'with-dirty-schedulers', 'Enable experimental dirty schedulers'
-  option 'no-docs', 'Do not install documentation'
+  option "without-hipe", "Disable building hipe; fails on various OS X systems"
+  option "with-native-libs", "Enable native library compilation"
+  option "with-dirty-schedulers", "Enable experimental dirty schedulers"
+  option "without-docs", "Do not install documentation"
+
+  deprecated_option "disable-hipe" => "without-hipe"
+  deprecated_option "no-docs" => "without-docs"
 
   depends_on "autoconf" => :build
   depends_on "automake" => :build
@@ -43,13 +47,11 @@ class Erlang < Formula
   fails_with :llvm
 
   def install
-    ohai "Compilation takes a long time; use `brew install -v erlang` to see progress" unless ARGV.verbose?
-
     # Unset these so that building wx, kernel, compiler and
     # other modules doesn't fail with an unintelligable error.
     %w[LIBS FLAGS AFLAGS ZFLAGS].each { |k| ENV.delete("ERL_#{k}") }
 
-    ENV["FOP"] = "#{HOMEBREW_PREFIX}/bin/fop" if build.with? 'fop'
+    ENV["FOP"] = "#{HOMEBREW_PREFIX}/bin/fop" if build.with? "fop"
 
     # Do this if building from a checkout to generate configure
     system "./otp_build autoconf" if File.exist? "otp_build"
@@ -72,27 +74,27 @@ class Erlang < Formula
     args << "--enable-dirty-schedulers" if build.with? "dirty-schedulers"
     args << "--enable-wx" if build.with? "wxmac"
 
-    if MacOS.version >= :snow_leopard and MacOS::CLT.installed?
+    if MacOS.version >= :snow_leopard && MacOS::CLT.installed?
       args << "--with-dynamic-trace=dtrace"
     end
 
-    if build.include? 'disable-hipe'
+    if build.without? "hipe"
       # HIPE doesn't strike me as that reliable on OS X
       # http://syntatic.wordpress.com/2008/06/12/macports-erlang-bus-error-due-to-mac-os-x-1053-update/
       # http://www.erlang.org/pipermail/erlang-patches/2008-September/000293.html
-      args << '--disable-hipe'
+      args << "--disable-hipe"
     else
-      args << '--enable-hipe'
+      args << "--enable-hipe"
     end
 
     system "./configure", *args
     system "make"
     ENV.j1 # Install is not thread-safe; can try to create folder twice and fail
-    system "make install"
+    system "make", "install"
 
-    unless build.include? 'no-docs'
-      (lib/'erlang').install resource('man').files('man')
-      doc.install resource('html')
+    if build.with? "docs"
+      (lib/"erlang").install resource("man").files("man")
+      doc.install resource("html")
     end
   end
 

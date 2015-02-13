@@ -48,6 +48,7 @@ class Pathname
     dst = dst.to_s
 
     dst = yield(src, dst) if block_given?
+    return unless dst
 
     mkpath
 
@@ -104,26 +105,29 @@ class Pathname
   # NOTE always overwrites
   def atomic_write content
     require "tempfile"
-    tf = Tempfile.new(basename.to_s)
-    tf.binmode
-    tf.write(content)
-    tf.close
-
+    tf = Tempfile.new(basename.to_s, dirname)
     begin
-      old_stat = stat
-    rescue Errno::ENOENT
-      old_stat = default_stat
-    end
+      tf.binmode
+      tf.write(content)
 
-    FileUtils.mv tf.path, self
+      begin
+        old_stat = stat
+      rescue Errno::ENOENT
+        old_stat = default_stat
+      end
 
-    uid = Process.uid
-    gid = Process.groups.delete(old_stat.gid) { Process.gid }
+      uid = Process.uid
+      gid = Process.groups.delete(old_stat.gid) { Process.gid }
 
-    begin
-      chown(uid, gid)
-      chmod(old_stat.mode)
-    rescue Errno::EPERM
+      begin
+        tf.chown(uid, gid)
+        tf.chmod(old_stat.mode)
+      rescue Errno::EPERM
+      end
+
+      File.rename(tf.path, self)
+    ensure
+      tf.close!
     end
   end
 
@@ -237,6 +241,7 @@ class Pathname
     when /^Rar!/n               then :rar
     when /^7z\xBC\xAF\x27\x1C/n then :p7zip
     when /^xar!/n               then :xar
+    when /^\xed\xab\xee\xdb/n   then :rpm
     else
       # This code so that bad-tarballs and zips produce good error messages
       # when they don't unarchive properly.
@@ -257,7 +262,7 @@ class Pathname
       digest.file(self)
     else
       buf = ""
-      open("rb") { |f| digest << buf while f.read(1024, buf) }
+      open("rb") { |f| digest << buf while f.read(16384, buf) }
     end
     digest.hexdigest
   end

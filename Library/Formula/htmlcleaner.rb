@@ -1,9 +1,9 @@
-require 'formula'
+require "formula"
 
 class Htmlcleaner < Formula
-  homepage 'http://htmlcleaner.sourceforge.net/index.php'
-  url 'https://downloads.sourceforge.net/project/htmlcleaner/htmlcleaner/htmlcleaner%20v2.8/htmlcleaner-2.8.zip'
-  sha1 'e4cbfebb306fc0baa95205ba91e452c961eebf85'
+  homepage "http://htmlcleaner.sourceforge.net/index.php"
+  url "https://downloads.sourceforge.net/project/htmlcleaner/htmlcleaner/htmlcleaner%20v2.10/htmlcleaner-2.10.zip"
+  sha1 "dddeeece559b3834c2699f2dba72393de2b53186"
 
   def install
     libexec.install "htmlcleaner-#{version}.jar"

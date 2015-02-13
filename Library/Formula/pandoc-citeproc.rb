@@ -1,18 +1,17 @@
-require "formula"
 require "language/haskell"
 
 class PandocCiteproc < Formula
   include Language::Haskell::Cabal
 
   homepage "https://github.com/jgm/pandoc-citeproc"
-  url "http://hackage.haskell.org/package/pandoc-citeproc-0.3.1/pandoc-citeproc-0.3.1.tar.gz"
-  sha1 "b972020fd6fa8447854b14d786c289062989b722"
-  revision 1
+  url "https://hackage.haskell.org/package/pandoc-citeproc-0.6/pandoc-citeproc-0.6.tar.gz"
+  sha1 "5236b4b4e201f94ab9f1bcd0d7e81c4271b46e8f"
 
   bottle do
-    sha1 "234bfacbe8f484a7304277ffc4f4817fd5316267" => :mavericks
-    sha1 "674107549aa368455939ae1219f2d40a53a92da2" => :mountain_lion
-    sha1 "b2a27763e7392ab70599992db8f0ddf3caf23ce0" => :lion
+    revision 1
+    sha1 "7cb2d23e4bfa3a7f30156101db645e9fcc27a5a8" => :yosemite
+    sha1 "94d27055eca1df4d2a928583f5e428f6bf5d6621" => :mavericks
+    sha1 "b0093fe0c141c1c17a232909c595faee5285c564" => :mountain_lion
   end
 
   depends_on "ghc" => :build
@@ -20,10 +19,11 @@ class PandocCiteproc < Formula
   depends_on "gmp"
   depends_on "pandoc" => :recommended
 
+  fails_with(:clang) { build 425 } # clang segfaults on Lion
+
   def install
     cabal_sandbox do
-      cabal_install_tools "alex", "happy"
-      cabal_install "--only-dependencies", "--constraint=temporary==1.2.0.1"
+      cabal_install "--only-dependencies"
       cabal_install "--prefix=#{prefix}"
     end
     cabal_clean_lib

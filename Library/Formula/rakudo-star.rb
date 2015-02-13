@@ -2,16 +2,17 @@ require "formula"
 
 class RakudoStar < Formula
   homepage "http://rakudo.org/"
-  url "http://rakudo.org/downloads/star/rakudo-star-2014.04.tar.gz"
-  sha256 "f4fc1e3193db0fa876978527011034a711fdf20a87ee10edbb2dc62958cfed6a"
+  url "http://rakudo.org/downloads/star/rakudo-star-2015.01.tar.gz"
+  sha256 "30c22e729bb6290e120bf7eb9b28a691090183b010a7f91aefd4d25a2c2d12bf"
 
   bottle do
-    sha1 "b6bb0365b0abed0186c46a6e5f4798ca0003f93a" => :mavericks
-    sha1 "ae1149342867020918fb46348a7d89b4d59f686b" => :mountain_lion
-    sha1 "5027d72cf160d00bae59ea35c98cf0aadd4ae102" => :lion
+    sha1 "3475077e3a06cd6602228bfddd86617f9a565d80" => :yosemite
+    sha1 "3a58076b45388fbbcf5598eb46c6acd516eabec3" => :mavericks
+    sha1 "c6135cdccafeefc44ae73406bf9909c071c5b12d" => :mountain_lion
   end
 
   option "with-jvm", "Build also for jvm as an alternate backend."
+  option "with-parrot", "Build also for parrot as an alternate backend."
 
   conflicts_with "parrot"
 
@@ -26,15 +27,27 @@ class RakudoStar < Formula
     ENV.prepend "CPPFLAGS", "-I#{libffi.lib}/libffi-#{libffi.version}/include"
 
     ENV.j1  # An intermittent race condition causes random build failures.
+
+    backends = ["moar"]
+    generate = ["--gen-moar"]
+
     if build.with? "jvm"
-      system "perl", "Configure.pl", "--prefix=#{prefix}", "--backends=parrot,jvm", "--gen-parrot"
-    else
-      system "perl", "Configure.pl", "--prefix=#{prefix}", "--backends=parrot", "--gen-parrot"
+      backends << "jvm"
     end
+    if build.with? "parrot"
+      backends << "parrot"
+      generate << "--gen-parrot"
+    end
+    system "perl", "Configure.pl", "--prefix=#{prefix}", "--backends=" + backends.join(","), *generate
     system "make"
     system "make install"
-    # move the man pages out of the top level into share.
-    mv "#{prefix}/man", share
+
+    # Move the man pages out of the top level into share.
+    # Not all backends seem to generate man pages at this point (moar does not, parrot does),
+    # so we need to check if the directory exists first.
+    if File.directory?("#{prefix}/man")
+      mv "#{prefix}/man", share
+    end
   end
 
   test do

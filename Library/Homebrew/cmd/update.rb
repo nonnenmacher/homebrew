@@ -79,7 +79,8 @@ module Homebrew
     if Dir[".git/*"].empty?
       safe_system "git", "init"
       safe_system "git", "config", "core.autocrlf", "false"
-      safe_system "git", "remote", "add", "origin", "https://github.com/Homebrew/homebrew.git"
+      safe_system "git", "config", "remote.origin.url", "https://github.com/Homebrew/homebrew.git"
+      safe_system "git", "config", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"
       safe_system "git", "fetch", "origin"
       safe_system "git", "reset", "--hard", "origin/master"
     end
@@ -219,9 +220,9 @@ class Updater
 
   def `(cmd)
     out = super
-    if $? && !$?.success?
-      $stderr.puts out
-      raise ErrorDuringExecution, "Failure while executing: #{cmd}"
+    unless $?.success?
+      $stderr.puts(out) unless out.empty?
+      raise ErrorDuringExecution.new(cmd)
     end
     ohai(cmd, out) if ARGV.verbose?
     out
