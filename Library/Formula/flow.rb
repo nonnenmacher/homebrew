@@ -2,15 +2,15 @@ require "formula"
 
 class Flow < Formula
   homepage "http://flowtype.org/"
-  url "https://github.com/facebook/flow/archive/v0.2.0.tar.gz"
-  sha1 "041281c08ac15dda22348b2ee3707a02f48a480e"
+  url "https://github.com/facebook/flow/archive/v0.7.0.tar.gz"
+  sha1 "654b6bce4f9c8af438bb0f99b7dcdc71e82dba7a"
   head "https://github.com/facebook/flow.git"
 
   bottle do
     cellar :any
-    sha1 "85f19cd0ae02563604f238acca481be9c80e9d07" => :yosemite
-    sha1 "4e7d2948772aa186600b9246df60bcc3cfed1b4f" => :mavericks
-    sha1 "e9ce9616ff21755b84b0738197e32ca39fb07fc5" => :mountain_lion
+    sha256 "34b42899cefa875566ba8ffdc49b30a23e564169574a661b26f10110153bcd3a" => :yosemite
+    sha256 "63ecd238a259c6b722d8dee6ff068d6fe371dc92b06bccc530d6301737f7aa78" => :mavericks
+    sha256 "147169d0dd8a16718b6f7273753107ba34a5deb99c2abaac25e5ba334b49131b" => :mountain_lion
   end
 
   depends_on "objective-caml" => :build

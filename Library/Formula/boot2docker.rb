@@ -1,10 +1,9 @@
-require "formula"
-
 class Boot2docker < Formula
   homepage "https://github.com/boot2docker/boot2docker-cli"
   # Boot2docker and docker are generally updated at the same time.
   # Please update the version of docker too
-  url "https://github.com/boot2docker/boot2docker-cli.git", :tag => "v1.5.0"
+  url "https://github.com/boot2docker/boot2docker-cli.git", :tag => "v1.5.0",
+    :revision => "ccd9032caf251ca63edaf3a0808456fa5d5f9057"
   head "https://github.com/boot2docker/boot2docker-cli.git"
 
   bottle do
@@ -22,8 +21,6 @@ class Boot2docker < Formula
     cd "src/github.com/boot2docker/boot2docker-cli" do
       ENV["GOPATH"] = buildpath
       system "go", "get", "-d"
-
-      ENV["GIT_DIR"] = cached_download/".git"
       system "make", "goinstall"
     end
 

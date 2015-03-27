@@ -1,13 +1,13 @@
 class Libxmp < Formula
   homepage "http://xmp.sourceforge.net"
-  url "https://downloads.sourceforge.net/project/xmp/libxmp/4.3.3/libxmp-4.3.3.tar.gz"
-  sha1 "96587f6412dedbba80558ef6c25a5bf966fa5887"
+  url "https://downloads.sourceforge.net/project/xmp/libxmp/4.3.6/libxmp-4.3.6.tar.gz"
+  sha256 "9894456dd3a8cea9b77de084c29f7cbb6ec16fd4d0005389913e8b205c02b750"
 
   bottle do
     cellar :any
-    sha1 "6c1d8e11eeed747b2c3eef68580242aa54fd534d" => :yosemite
-    sha1 "95b085e5280cd384298f4076670b2c748dd57f14" => :mavericks
-    sha1 "baa6fa4eb7e74e3212ede70e140c3ac535bd68c9" => :mountain_lion
+    sha256 "03e06b3182491c292cee3efc6b1b5718d1874c5233f4ccf9c4ebc4cdb2fdf9a6" => :yosemite
+    sha256 "208465d33f34a909397aabbe88139e952bebfeda428f1c79819dfb50f5832dde" => :mavericks
+    sha256 "615b556b2c0cb26f624c483db529a29add9cfe44ec168a562d90705a09af9d7d" => :mountain_lion
   end
 
   head do

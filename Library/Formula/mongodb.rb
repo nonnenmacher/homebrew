@@ -1,29 +1,24 @@
 require "formula"
+require "language/go"
 
 class Mongodb < Formula
   homepage "https://www.mongodb.org/"
+  url "https://fastdl.mongodb.org/src/mongodb-src-r3.0.1.tar.gz"
+  sha256 "68980641996a3a4b5440e12d343c2de98bb7f350fbc0c8327a674094d6e11213"
 
-  url "https://fastdl.mongodb.org/src/mongodb-src-r2.6.7.tar.gz"
-  sha1 "c11c9d31063f2fc126249f7580e8417a8f4ef2b5"
-
-  bottle do
-    sha1 "4b1749b645a744b38b4959daac46bf80353e3b32" => :yosemite
-    sha1 "95725282b89443fafcdc0974e60b10bd295b48ee" => :mavericks
-    sha1 "2da546a136e48a5f9dc86287c329b5741b77bd14" => :mountain_lion
+  # Mongo HEAD now requires mongo-tools, and Golang
+  # https://jira.mongodb.org/browse/SERVER-15806
+  depends_on "go" => :build
+  go_resource "github.com/mongodb/mongo-tools" do
+    url "https://github.com/mongodb/mongo-tools.git",
+      :tag => "r3.0.1",
+      :revision => "bc08e57abb71b2edd1cc3ab8f9f013409718f197"
   end
 
-  devel do
-    # This can't be bumped past 2.7.7 until we decide what to do with
-    # https://github.com/Homebrew/homebrew/pull/33652
-    url "https://fastdl.mongodb.org/src/mongodb-src-r2.7.7.tar.gz"
-    sha1 "ce223f5793bdf5b3e1420b0ede2f2403e9f94e5a"
-
-    # Remove this with the next devel release. Already merged in HEAD.
-    # https://github.com/mongodb/mongo/commit/8b8e90fb
-    patch do
-      url "https://github.com/mongodb/mongo/commit/8b8e90fb.diff"
-      sha1 "9f9ce609c7692930976690cae68aa4fce1f8bca3"
-    end
+  bottle do
+    sha256 "3761153651660207c145da9eac659c7b8ddaed879b44f6127c534d5f79e32f46" => :yosemite
+    sha256 "f761d0e8d97fcc924c466165a6193c7c8169153b9afd33ca77b35bbb3a16b5e7" => :mavericks
+    sha256 "7b212a87996b0e3cc9a9eddb180ec41bfbe9e056528c5f060029d94c18a8828a" => :mountain_lion
   end
 
   option "with-boost", "Compile using installed boost, not the version shipped with mongodb"
@@ -33,16 +28,28 @@ class Mongodb < Formula
   depends_on "scons" => :build
   depends_on "openssl" => :optional
 
-  # Review this patch with each release.
-  # This modifies the SConstruct file to include 10.10 as an accepted build option.
-  if MacOS.version == :yosemite
-    patch do
-      url "https://raw.githubusercontent.com/DomT4/scripts/fbc0cda/Homebrew_Resources/Mongodb/mongoyosemite.diff"
-      sha1 "f4824e93962154aad375eb29527b3137d07f358c"
-    end
-  end
-
   def install
+
+    # New Go tools have their own build script but the server scons "install" target is still
+    # responsible for installing them.
+    Language::Go.stage_deps resources, buildpath/"src"
+
+    cd "src/github.com/mongodb/mongo-tools" do
+      args = %W[]
+      # Once https://github.com/mongodb/mongo-tools/issues/11 is fixed, also set CPATH.
+      # For now, use default include path
+      #
+      if build.with? "openssl"
+        args << "ssl"
+        ENV["LIBRARY_PATH"] = "#{Formula["openssl"].opt_prefix}/lib"
+        # ENV["CPATH"] = "#{Formula["openssl"].opt_prefix}/include"
+      end
+      system "./build.sh", *args
+    end
+
+    mkdir "src/mongo-tools"
+    cp Dir["src/github.com/mongodb/mongo-tools/bin/*"], "src/mongo-tools/"
+
     args = %W[
       --prefix=#{prefix}
       -j#{ENV.make_jobs}
@@ -51,11 +58,8 @@ class Mongodb < Formula
       --osx-version-min=#{MacOS.version}
     ]
 
-    # --full installs development headers and client library, not just binaries
-    # (only supported pre-2.7)
-    args << "--full" if build.stable?
     args << "--use-system-boost" if build.with? "boost"
-    args << "--64" if MacOS.prefer_64_bit?
+    args << "--use-new-tools"
 
     if build.with? "openssl"
       args << "--ssl" << "--extrapath=#{Formula["openssl"].opt_prefix}"
@@ -110,12 +114,12 @@ class Mongodb < Formula
       <key>HardResourceLimits</key>
       <dict>
         <key>NumberOfFiles</key>
-        <integer>1024</integer>
+        <integer>65536</integer>
       </dict>
       <key>SoftResourceLimits</key>
       <dict>
         <key>NumberOfFiles</key>
-        <integer>1024</integer>
+        <integer>65536</integer>
       </dict>
     </dict>
     </plist>
