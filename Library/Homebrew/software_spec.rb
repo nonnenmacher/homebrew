@@ -63,7 +63,7 @@ class SoftwareSpec
 
   def bottled?
     bottle_specification.tag?(bottle_tag) && \
-      bottle_specification.compatible_cellar?
+      (bottle_specification.compatible_cellar? || ARGV.force_bottle?)
   end
 
   def bottle &block
@@ -83,6 +83,10 @@ class SoftwareSpec
     else
       resources.fetch(name) { raise ResourceMissingError.new(owner, name) }
     end
+  end
+
+  def go_resource name, &block
+    resource name, Resource::Go, &block
   end
 
   def option_defined?(name)

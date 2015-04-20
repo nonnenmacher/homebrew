@@ -1,13 +1,13 @@
 class Etcd < Formula
   homepage "https://github.com/coreos/etcd"
-  url "https://github.com/coreos/etcd/archive/v2.0.5.tar.gz"
-  sha256 "ded57e8aac39c8ea7badb9785fbca564b3d768c2482c2d9c40bff83a3dc32ad8"
+  url "https://github.com/coreos/etcd/archive/v2.0.9.tar.gz"
+  sha256 "a03c44fa125a3058c4cec0704136485b6031163108399969ba4a0e19f98dcf23"
   head "https://github.com/coreos/etcd.git"
 
   bottle do
-    sha256 "41f81923a5c7c2fafb2ec1f6c95d354daea8986cf32c4fca56735180fd130a03" => :yosemite
-    sha256 "e3ca3ccf596d76b9a60060e80edc691928617b39df93c5a7dac1bf41895c4554" => :mavericks
-    sha256 "d2ca6ebfe34d406deed30968f491def63c1e06b1239f605203c6ce1990a4d564" => :mountain_lion
+    sha256 "870f5f666aa3f07d6ca11825a4f052dfcd1057d6e8d9492e5ad786a587ecde84" => :yosemite
+    sha256 "8c21a563a19ec03d7424523e91b4c091bc51c55d447b8db0fb15488d147c0486" => :mavericks
+    sha256 "92960a6f1bcf2e87b4b0621294ce61c9a5586395e5509379132e5507ddeecb8a" => :mountain_lion
   end
 
   depends_on "go" => :build

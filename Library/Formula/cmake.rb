@@ -1,15 +1,14 @@
 class Cmake < Formula
   homepage "http://www.cmake.org/"
-  url "http://www.cmake.org/files/v3.2/cmake-3.2.1.tar.gz"
-  sha1 "53c1fe2aaae3b2042c0fe5de177f73ef6f7b267f"
+  url "http://www.cmake.org/files/v3.2/cmake-3.2.2.tar.gz"
+  sha256 "ade94e6e36038774565f2aed8866415443444fb7a362eb0ea5096e40d5407c78"
   head "http://cmake.org/cmake.git"
 
   bottle do
     cellar :any
-    revision 1
-    sha256 "4357df1b230086cd7e27db5e52c3235b667f701acc55c08e30f7af4ce1c10e6c" => :yosemite
-    sha256 "15d3eb635ba99cd3171f116e0d48984c4e9379c1b4bbbede0a11469e975cb5cb" => :mavericks
-    sha256 "1b5c1e10304e5dca9f50436ccfc3b459e7a038b79d3e2418ba161bdd05d1c266" => :mountain_lion
+    sha256 "839ec4e40ec92ae80915edfcef9bd4feb6f788ce95958697f5274fbc4332a4a7" => :yosemite
+    sha256 "835b5731c9febd40ec3c321609bad8bb67390c55b4bcc3a0fd827c8e54315358" => :mavericks
+    sha256 "2f7b63e4c123eb5a87c64ad75f823ab74c3221ec58022980e476d38c9874fc8c" => :mountain_lion
   end
 
   option "without-docs", "Don't build man pages"
@@ -66,6 +65,9 @@ class Cmake < Formula
       --datadir=/share/cmake
       --docdir=/share/doc/cmake
       --mandir=/share/man
+      --system-curl
+      --system-zlib
+      --system-bzip2
     ]
 
     if build.with? "docs"

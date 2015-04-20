@@ -53,13 +53,15 @@ Note that these flags should only appear after a command.
   * `cat` <formula>:
     Display the source to <formula>.
 
-  * `cleanup [--force] [-ns]` [<formulae>]:
+  * `cleanup [--force] [--prune=<days>] [-ns]` [<formulae>]:
     For all installed or specific formulae, remove any older versions from the
     cellar. By default, does not remove out-of-date keg-only brews, as other
     software may link directly to specific versions. In addition old downloads from
     the Homebrew download-cache are deleted.
 
     If `--force` is passed, remove out-of-date keg-only brews as well.
+
+    If `--prune=<days>` is specified, remove all cache files older than <days>.
 
     If `-n` is passed, show what would be removed, but do not actually remove anything.
 
@@ -139,7 +141,7 @@ Note that these flags should only appear after a command.
     stable version.
 
     If `-v` is passed, do a verbose VCS checkout, if the url represents a CVS.
-    This useful for seeing if an existing VCS cache has been updated.
+    This is useful for seeing if an existing VCS cache has been updated.
 
     If `--force` is passed, remove a previously cached version and re-fetch.
 

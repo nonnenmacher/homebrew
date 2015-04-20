@@ -1,15 +1,15 @@
 require "language/go"
 
 class Gauge < Formula
-  homepage "http://getgauge.io"
-  url "https://github.com/getgauge/gauge/archive/v0.0.5.tar.gz"
-  sha1 "4f0e51963f40d0a512f8fbd30b12a42d959abc25"
+  homepage "https://getgauge.io"
+  url "https://github.com/getgauge/gauge/archive/v0.1.0.tar.gz"
+  sha1 "2abd107530d4a4295fe6ccf5699f3188ce1f7a99"
 
   bottle do
     cellar :any
-    sha1 "a719ae5ca2def0f33dd990e7423aea5f750a0315" => :yosemite
-    sha1 "eede2a785d3441e07facc69c8efc1f5aedb3b577" => :mavericks
-    sha1 "d93d8f4c11e23fc90a67940b9094b81d2170371d" => :mountain_lion
+    sha256 "56af2c22c6c1af59eae5074adb03b3555ba733e4055be3fab9eb0c33918df19b" => :yosemite
+    sha256 "a7515a31f05fe874671a45b1510e8b06335df2c172b06f342f2884bfd448a3ac" => :mavericks
+    sha256 "b7e199c79ec61e4a039fa9eb839c6c753cb1a44f4c84d7c12a603c99c2d7fb93" => :mountain_lion
   end
 
   depends_on "go" => :build
@@ -21,7 +21,7 @@ class Gauge < Formula
 
   go_resource "github.com/getgauge/common" do
     url "https://github.com/getgauge/common.git",
-        :revision => "44ddedf61ebcff8e099aa534616676e43be3ed18"
+        :revision => "f81990f732c85813af305a8f0c862e3c21138f37"
   end
 
   go_resource "github.com/getgauge/mflag" do

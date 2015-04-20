@@ -1,20 +1,20 @@
 class Nginx < Formula
   homepage "http://nginx.org/"
-  url "http://nginx.org/download/nginx-1.6.2.tar.gz"
-  sha1 "1a5458bc15acf90eea16353a1dd17285cf97ec35"
+  url "http://nginx.org/download/nginx-1.6.3.tar.gz"
+  sha1 "7ee99f16e91e655eb555d5f684155fc2a1f23b4f"
 
   devel do
-    url "http://nginx.org/download/nginx-1.7.10.tar.gz"
-    sha1 "df9d4feab4386b0c10a7817a1d765b5a1fdbd780"
+    url "http://nginx.org/download/nginx-1.7.12.tar.gz"
+    sha1 "346af3e6dd087a2189d6344c182208263eaa079b"
   end
 
   head "http://hg.nginx.org/nginx/", :using => :hg
 
   bottle do
-    revision 1
-    sha1 "67f757d71e7372b8ccd390c63c2d604792fde33e" => :yosemite
-    sha1 "25cc325ec468f84edd9300369a1845a87109c1d0" => :mavericks
-    sha1 "a75d729e45f85ccaf5ad53095d52b4ce1ae455f2" => :mountain_lion
+    revision 2
+    sha256 "b8465e0f291d819ae0e4287f4640a81cf531af092caef11a34ec19d14c873f69" => :yosemite
+    sha256 "7c56b079f0a5c07b32fbfd8d681de2d349ab3eb5f3ea032c73475931cbad6223" => :mavericks
+    sha256 "042df630570fda3cfc304b718eeff204099cbdb9c97adcaa86f25c6ef9fd9aa5" => :mountain_lion
   end
 
   env :userpaths
@@ -35,6 +35,7 @@ class Nginx < Formula
   def install
     # Changes default port to 8080
     inreplace "conf/nginx.conf", "listen       80;", "listen       8080;"
+    open("conf/nginx.conf", "a") {|f| f.puts "include servers/*;" }
 
     pcre = Formula["pcre"]
     openssl = Formula["openssl"]
@@ -79,6 +80,8 @@ class Nginx < Formula
     system "make"
     system "make", "install"
     man8.install "objs/nginx.8"
+
+    (etc/"nginx/servers").mkpath
     (var/"run/nginx").mkpath
   end
 
@@ -126,6 +129,8 @@ class Nginx < Formula
 
     The default port has been set in #{etc}/nginx/nginx.conf to 8080 so that
     nginx can run without sudo.
+
+    nginx will load all files in #{etc}/nginx/servers/.
     EOS
     s << passenger_caveats if build.with? "passenger"
     s
