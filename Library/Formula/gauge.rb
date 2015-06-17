@@ -1,15 +1,16 @@
 require "language/go"
 
 class Gauge < Formula
-  homepage "https://getgauge.io"
-  url "https://github.com/getgauge/gauge/archive/v0.1.0.tar.gz"
-  sha1 "2abd107530d4a4295fe6ccf5699f3188ce1f7a99"
+  desc "Test automation tool that supports executable documentation"
+  homepage "http://getgauge.io"
+  url "https://github.com/getgauge/gauge/archive/v0.1.4.tar.gz"
+  sha1 "6d1aed1cdbd2dfe5e3c32d85ea2ffa0f305478f7"
 
   bottle do
     cellar :any
-    sha256 "56af2c22c6c1af59eae5074adb03b3555ba733e4055be3fab9eb0c33918df19b" => :yosemite
-    sha256 "a7515a31f05fe874671a45b1510e8b06335df2c172b06f342f2884bfd448a3ac" => :mavericks
-    sha256 "b7e199c79ec61e4a039fa9eb839c6c753cb1a44f4c84d7c12a603c99c2d7fb93" => :mountain_lion
+    sha256 "74037e9f211487cd8a3b189b0fbdd8a131f0c74e4c231c04ca8d8bd982974572" => :yosemite
+    sha256 "d18c054b51dd8536d0126b544e2145237f9cee0ab154a593f62db709ff221794" => :mavericks
+    sha256 "8913e5692c08384a8954148fe49c8761be0407fe04534dc1f9e9930016dc3f37" => :mountain_lion
   end
 
   depends_on "go" => :build
@@ -21,7 +22,7 @@ class Gauge < Formula
 
   go_resource "github.com/getgauge/common" do
     url "https://github.com/getgauge/common.git",
-        :revision => "f81990f732c85813af305a8f0c862e3c21138f37"
+        :revision => "16d1f84d7248590955440a4027cb062c4289a565"
   end
 
   go_resource "github.com/getgauge/mflag" do
@@ -54,6 +55,12 @@ class Gauge < Formula
   go_resource "github.com/wsxiaoys/terminal" do
     url "https://github.com/wsxiaoys/terminal.git",
         :revision => "9dcaf1d63119a8ac00eef82270eaef08b6aa2328"
+  end
+
+  go_resource "gopkg.in/fsnotify.v1" do
+    url "https://gopkg.in/fsnotify.v1",
+        :revision => "96c060f6a6b7e0d6f75fddd10efeaca3e5d1bcb0",
+        :using => :git
   end
 
   def install

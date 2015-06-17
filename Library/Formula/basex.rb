@@ -1,16 +1,17 @@
 require 'formula'
 
 class Basex < Formula
+  desc "Light-weight XML database and XPath/XQuery processor"
   homepage 'http://basex.org'
-  url 'http://files.basex.org/releases/8.1.1/BaseX811.zip'
-  version '8.1.1'
-  sha1 '14880d68460c6c67696dde86fba3a342d0920dde'
+  url 'http://files.basex.org/releases/8.2.1/BaseX821.zip'
+  version '8.2.1'
+  sha256 '4073aa250a9551619b9fb254d3022da97b97d2b5085fdf7535fb92a53d3f1589'
 
   bottle do
     cellar :any
-    sha256 "680ac5ad68cb5867898c945734c9594805e7f2c13c99405d16993bc899826ad7" => :yosemite
-    sha256 "9539d4f3dfb2e88bc895f751a955327e1c123470590c5b7e98b628d31db1b79c" => :mavericks
-    sha256 "d24f992d3e7a3ca87d8f3d0be267b086347c41e8246f16bb12c04b4c71f1546c" => :mountain_lion
+    sha256 "446ecf222327f0a3914cb677b4dccb7bfabeac81451c1ddd989a78375171fd90" => :yosemite
+    sha256 "deac3806b1c4e7c7ba2faf448ae2062e5ef073c796791018807a42a48dea81bb" => :mavericks
+    sha256 "6a2dd33330cafa32e823c48bad20e763daff81be3b3d7d6721d151c3943184c6" => :mountain_lion
   end
 
   def install

@@ -1,12 +1,14 @@
 class Redis < Formula
+  desc "Persistent key-value database, with built-in net interface"
   homepage "http://redis.io/"
-  url "http://download.redis.io/releases/redis-3.0.0.tar.gz"
-  sha1 "c75fd32900187a7c9f9d07c412ea3b3315691c65"
+  url "http://download.redis.io/releases/redis-3.0.2.tar.gz"
+  sha256 "93e422c0d584623601f89b956045be158889ebe594478a2c24e1bf218495633f"
 
   bottle do
-    sha256 "9222eb768c9f165d35fa923b6ddaf57830928d5bf281b4d794aa14dd63fe5a04" => :yosemite
-    sha256 "283dd74ac65cc8a793144d732b51ec3d125e39172990f12dc7569dd107d25bf2" => :mavericks
-    sha256 "20c407d4ff095a40f3eb3980652adae13e75316c33526c34bd73be19a5df2dab" => :mountain_lion
+    cellar :any
+    sha256 "4a004f8f829c0c79634db75a8889e305990110934afba8bb27b48e0aaaecf53b" => :yosemite
+    sha256 "77958c3e65e2579181846464de2b777fc8d6ffdf524988866a4c78fbc376f76b" => :mavericks
+    sha256 "54bda6925b7258c6dbcd8134fbb64a3feae09d1c0de1fedae7925a524ee1befe" => :mountain_lion
   end
 
   head "https://github.com/antirez/redis.git", :branch => "unstable"

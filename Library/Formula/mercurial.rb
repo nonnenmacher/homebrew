@@ -1,15 +1,16 @@
 # No head build supported; if you need head builds of Mercurial, do so outside
 # of Homebrew.
 class Mercurial < Formula
-  homepage "http://mercurial.selenic.com/"
-  url "http://mercurial.selenic.com/release/mercurial-3.3.3.tar.gz"
-  sha1 "999d5db4961e2c745f17df44d7ae64dce2d8425b"
+  desc "Scalable distributed version control system"
+  homepage "https://mercurial.selenic.com/"
+  url "https://mercurial.selenic.com/release/mercurial-3.4.1.tar.gz"
+  sha256 "7a8acf7329beda38ceea29c689212574d9a6bfffe24cf565015ea0066f7cee3f"
 
   bottle do
     cellar :any
-    sha256 "d8e1617d7b943d48d6e3db7d5792be749fa8aec4b3f5a6ff74ff1dc6f3253925" => :yosemite
-    sha256 "cc932a8efa6ed7b34c1a52b29833e1a77a57ee452159f8008bc890343c16af98" => :mavericks
-    sha256 "b9fbad5fcfd0e37496c613d3b9444d3c4ca66d7ab1deb9cf12c227c90d97d7ac" => :mountain_lion
+    sha256 "f038a255e43c177ae362f319d0cef3e42c1bf631418de78ee13165dc48d2b9ba" => :yosemite
+    sha256 "b9408e88838e05d57720735b95c8dc00efbf81f655846b29fb363895580a1daa" => :mavericks
+    sha256 "a0b7d3f952aae73b8b02aff8c82c41af458babddf9c1e01118676ec1139a734b" => :mountain_lion
   end
 
   def install

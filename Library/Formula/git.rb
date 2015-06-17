@@ -1,24 +1,26 @@
 class Git < Formula
-  homepage "http://git-scm.com"
-  url "https://www.kernel.org/pub/software/scm/git/git-2.3.5.tar.xz"
-  sha256 "d7711324a58d41b4c46d1e4d560ce17fec5f79fa0311107c15aac866f2c1645a"
+  desc "Distributed revision control system"
+  homepage "https://git-scm.com"
+  url "https://www.kernel.org/pub/software/scm/git/git-2.4.3.tar.xz"
+  sha256 "f05007a9d1ef28c3d84091ddf7ce5d29c2df2272f34b4dd8b24e09274280d814"
 
   head "https://github.com/git/git.git", :shallow => false
 
   bottle do
-    sha256 "35708391ab232b2846df929970c090b2c240792c7cfd6110fab0e7a72bce0c82" => :yosemite
-    sha256 "ccec7a87272392ffa1ce08e056bbef5d00f5514c203b983d8d017317fd1fb283" => :mavericks
-    sha256 "a7a248202bc5275724724b09ead3b1273f3edc95c4c6ff5ae2ca2b0e7cd666cc" => :mountain_lion
+    revision 1
+    sha256 "452c896f29ac78004482cf5a0de63aab0e393d8f0b24b094fef0147ad94e91cc" => :yosemite
+    sha256 "9bf5b62541989ba6a79705c37b317d5561d4ee44808c70dd3906f8697a6bde10" => :mavericks
+    sha256 "43aa19fb41413aef74d9d20913ac307079c5b1fbd486358986ff48eb4614aa96" => :mountain_lion
   end
 
   resource "man" do
-    url "https://www.kernel.org/pub/software/scm/git/git-manpages-2.3.5.tar.xz"
-    sha256 "8a1d580a45f9ca3220a59f96ebab9194c1ae6e1f3b30c8a934807040ce6d1940"
+    url "https://www.kernel.org/pub/software/scm/git/git-manpages-2.4.3.tar.xz"
+    sha256 "91e1a9cb4a35c141bd875063fedc0409ecb676e828204afabc75c3b4c7b844cc"
   end
 
   resource "html" do
-    url "https://www.kernel.org/pub/software/scm/git/git-htmldocs-2.3.5.tar.xz"
-    sha256 "0e5588248735a209aaf0b7606e647fc9c4f90e0d5184ee28da9a41eccb85eaa1"
+    url "https://www.kernel.org/pub/software/scm/git/git-htmldocs-2.4.3.tar.xz"
+    sha256 "5a6f6ef9c992eef29b62d8e963ba508583b917f14a374e0fbba3fe50a44c111a"
   end
 
   option "with-blk-sha1", "Compile with the block-optimized SHA1 implementation"
@@ -52,7 +54,7 @@ class Git < Formula
     perl_version = /\d\.\d+/.match(`perl --version`)
 
     if build.with? "brewed-svn"
-      ENV["PERLLIB_EXTRA"] = "#{Formula["subversion"].prefix}/Library/Perl/#{perl_version}/darwin-thread-multi-2level"
+      ENV["PERLLIB_EXTRA"] = "#{Formula["subversion"].opt_prefix}/Library/Perl/#{perl_version}/darwin-thread-multi-2level"
     elsif MacOS.version >= :mavericks
       ENV["PERLLIB_EXTRA"] = %W[
         #{MacOS.active_developer_dir}
@@ -76,12 +78,16 @@ class Git < Formula
 
     ENV["NO_GETTEXT"] = "1" if build.without? "gettext"
 
-    system "make", "prefix=#{prefix}",
-                   "sysconfdir=#{etc}",
-                   "CC=#{ENV.cc}",
-                   "CFLAGS=#{ENV.cflags}",
-                   "LDFLAGS=#{ENV.ldflags}",
-                   "install"
+    args = %W[
+      prefix=#{prefix}
+      sysconfdir=#{etc}
+      CC=#{ENV.cc}
+      CFLAGS=#{ENV.cflags}
+      LDFLAGS=#{ENV.ldflags}
+    ]
+    args << "NO_OPENSSL=1" << "APPLE_COMMON_CRYPTO=1" if build.without? "brewed-openssl"
+
+    system "make", "install", *args
 
     # Install the OS X keychain credential helper
     cd "contrib/credential/osxkeychain" do

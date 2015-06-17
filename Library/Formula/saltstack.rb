@@ -1,20 +1,14 @@
 class Saltstack < Formula
+  desc "Dynamic infrastructure communication bus"
   homepage "http://www.saltstack.org"
-  url "https://github.com/saltstack/salt/archive/v2014.7.1.tar.gz"
-  sha256 "5fcf2cff700d0719b419c9cb489552645ce1287a15c7b3a8745959773d9b0dd1"
+  url "https://github.com/saltstack/salt/archive/v2015.5.0.tar.gz"
+  sha256 "278142ffd4d6ec693a7d160c27d360e9fdce6ae9c7de40e3cb18805078488b71"
   head "https://github.com/saltstack/salt.git", :branch => "develop", :shallow => false
-  revision 1
 
   bottle do
-    sha256 "ba2dad536526cb11eea8b250a1197e68c1eec80b512ea90bcd7ea973e3111624" => :yosemite
-    sha256 "0bb6b9bb0ea00c8e430213d11be6ef9ef404daef176f401c2d0c89431608f69c" => :mavericks
-    sha256 "287ecda2663c99934af942ae0d034bcbb96972afdae6087e47c7abbca198f77d" => :mountain_lion
-  end
-
-  devel do
-    url "https://github.com/saltstack/salt/archive/v2015.2.0rc2.tar.gz"
-    sha256 "be71c1f2f9f878d5f958396620983c5981f55eaf32913e7f28c129c35f37657a"
-    version "2015.2.0rc2"
+    sha256 "cf9d2aee286f69efcd838021b9e21fcb87189e4c4f1b32a01213ed63dd1154e4" => :yosemite
+    sha256 "84096f34d6f8940236594f8c08ac7fe344e5878026c829b96edc772d87b82e95" => :mavericks
+    sha256 "03493a5a2cb2e9e203691e1ff15473f7ddb718c9a6c12e386782b055ef68262d" => :mountain_lion
   end
 
   depends_on :python if MacOS.version <= :snow_leopard
@@ -80,6 +74,23 @@ class Saltstack < Formula
     sha256 "f12f80c2f66e46c406c53b90c41eb572c29751c407bdbe7204ec6d9264ce16bc"
   end
 
+  # Required by tornado
+  resource "certifi" do
+    url "https://pypi.python.org/packages/source/c/certifi/certifi-14.05.14.tar.gz"
+    sha256 "1e1bcbacd6357c151ae37cf0290dcc809721d32ce21fd6b7339568f3ddef1b69"
+  end
+
+  # Required by tornado
+  resource "backports.ssl_match_hostname" do
+    url "https://pypi.python.org/packages/source/b/backports.ssl_match_hostname/backports.ssl_match_hostname-3.4.0.2.tar.gz"
+    sha256 "07410e7fb09aab7bdaf5e618de66c3dac84e2e3d628352814dc4c37de321d6ae"
+  end
+
+  resource "tornado" do
+    url "https://pypi.python.org/packages/source/t/tornado/tornado-4.1.tar.gz"
+    sha256 "99abd3aede45c93739346ee7384e710120121c3744da155d5cff1c0101702228"
+  end
+
   def install
     resource("swig304").stage do
       system "./configure", "--disable-dependency-tracking", "--prefix=#{buildpath}/swig"
@@ -90,7 +101,11 @@ class Saltstack < Formula
     ENV.prepend_path "PATH", buildpath/"swig/bin"
 
     ENV.prepend_create_path "PYTHONPATH", libexec/"vendor/lib/python2.7/site-packages"
-    %w[requests pycrypto pyyaml markupsafe jinja2 pyzmq msgpack-python apache-libcloud].each do |r|
+
+    rs = %w[requests pycrypto pyyaml markupsafe jinja2 pyzmq msgpack-python apache-libcloud]
+    rs += %w[certifi backports.ssl_match_hostname tornado] if build.head?
+
+    rs.each do |r|
       resource(r).stage do
         system "python", *Language::Python.setup_install_args(libexec/"vendor")
       end

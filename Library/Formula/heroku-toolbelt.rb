@@ -1,34 +1,18 @@
-class Ruby19 < Requirement
-  fatal true
-  default_formula "ruby"
-
-  satisfy :build_env => false do
-    next unless which "ruby"
-    version = /\d\.\d/.match `ruby --version 2>&1`
-    next unless version
-    Version.new(version.to_s) >= Version.new("1.9")
-  end
-
-  env do
-    ENV.prepend_path "PATH", which("ruby").dirname
-  end
-
-  def message; <<-EOS.undent
-    The Heroku Toolbelt needs Ruby >=1.9
-    EOS
-  end
-end
-
 class HerokuToolbelt < Formula
+  desc "Everything you need to get started with Heroku"
   homepage "https://toolbelt.heroku.com/other"
-  url "https://s3.amazonaws.com/assets.heroku.com/heroku-client/heroku-client-3.31.2.tgz"
-  sha256 "8e859fc1f95508ddfb4684f752ced4c2876aa94839830619ec659f83d72050fd"
+  url "https://s3.amazonaws.com/assets.heroku.com/heroku-client/heroku-client-3.38.1.tgz"
+  sha256 "b92a43d0568e9243684f33040af31982291dbd0ff61b5b840d7e989982dc2206"
   head "https://github.com/heroku/heroku.git"
 
-  depends_on Ruby19
+  depends_on :ruby => "1.9"
 
   def install
     libexec.install Dir["*"]
+    # turn off autoupdates (off by default in HEAD)
+    if build.stable?
+      inreplace libexec/"bin/heroku", "Heroku::Updater.inject_libpath", "Heroku::Updater.disable(\"Use `brew upgrade heroku-toolbelt` to update\")"
+    end
     bin.write_exec_script libexec/"bin/heroku"
   end
 

@@ -1,13 +1,14 @@
 class Awscli < Formula
+  desc "Official Amazon AWS command-line interface"
   homepage "https://aws.amazon.com/cli/"
-  url "https://pypi.python.org/packages/source/a/awscli/awscli-1.7.18.tar.gz"
-  sha256 "0174276c5e0c830cc77052580d9aadf52e944ade009625fb9be0ee04251a96f2"
+  url "https://pypi.python.org/packages/source/a/awscli/awscli-1.7.34.tar.gz"
+  sha256 "b0545e1526718f3af53f8ef7a875b11d1f2fec5f6475067d26f42be235723ad6"
 
   bottle do
     cellar :any
-    sha256 "92fa6487bd56dc19bc0c7b018e68817318797f4c5cb0b6043d80834a213e0c75" => :yosemite
-    sha256 "5fe0865b83817a80ef47c0546aa045edaa493855cdbeef7aa94d72f95a66ac10" => :mavericks
-    sha256 "85f3756cca15bee083ddf62ab5f5b40e82b68070bba22ad49f87b804fb858e10" => :mountain_lion
+    sha256 "2ee2a272585cf26ef40ba214e1b239c1194db836edd09759a5fdfdbb550b92bc" => :yosemite
+    sha256 "c17854e2e9ad28dc056fd05c9b65b9286d6ebffd4792f58f1ad56c5a852d7fc2" => :mavericks
+    sha256 "b1936bb94f4e602c985950b9c9679f5e00dbc6438acd98e20494f8b9958082d3" => :mountain_lion
   end
 
   head do
@@ -19,9 +20,6 @@ class Awscli < Formula
 
     resource "bcdoc" do
       url "https://github.com/boto/bcdoc.git", :branch => "develop"
-    end
-
-    resource "jmespath" do
       url "https://github.com/boto/jmespath.git", :branch => "develop"
     end
   end
@@ -36,8 +34,8 @@ class Awscli < Formula
   end
 
   resource "python-dateutil" do
-    url "https://pypi.python.org/packages/source/p/python-dateutil/python-dateutil-2.4.1.post1.tar.gz"
-    sha256 "aa9bdbd60c395db90204609f1fb5aeb3797870f65c09f04f243476d22f8f4615"
+    url "https://pypi.python.org/packages/source/p/python-dateutil/python-dateutil-2.4.2.tar.gz"
+    sha256 "3e95445c1db500a344079a47b171c45ef18f57d188dffdb0e4165c71bea8eb3d"
   end
 
   resource "colorama" do
@@ -46,13 +44,13 @@ class Awscli < Formula
   end
 
   resource "jmespath" do
-    url "https://pypi.python.org/packages/source/j/jmespath/jmespath-0.6.1.tar.gz"
-    sha1 "f3fc294e5225f2529968f58eb75c9da91fbeb9c1"
+    url "https://pypi.python.org/packages/source/j/jmespath/jmespath-0.7.1.tar.gz"
+    sha1 "10cbbf7f1a892d2c4fce7f7e84bb91e9108fcf45"
   end
 
   resource "botocore" do
-    url "https://pypi.python.org/packages/source/b/botocore/botocore-0.99.0.tar.gz"
-    sha256 "20cd9e82a358e2aad9e0b188cdee9ffa5c42219d5382d91a9ca1c85ff28f7df0"
+    url "https://pypi.python.org/packages/source/b/botocore/botocore-1.0.0b3.tar.gz"
+    sha256 "6f91dd0dd5520b36098c5996b7424051c824f69a20f00433ae3c9ecba2218b00"
   end
 
   resource "docutils" do
@@ -61,8 +59,8 @@ class Awscli < Formula
   end
 
   resource "bcdoc" do
-    url "https://pypi.python.org/packages/source/b/bcdoc/bcdoc-0.13.0.tar.gz"
-    sha256 "ffe7bfc278f83bab826e9f52e2860a858579fffab2febf60ce2ec6c3f9247763"
+    url "https://pypi.python.org/packages/source/b/bcdoc/bcdoc-0.16.0.tar.gz"
+    sha256 "f568c182e06883becf7196f227052435cffd45604700c82362ca77d3427b6202"
   end
 
   resource "pyasn1" do

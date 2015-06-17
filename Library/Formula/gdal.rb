@@ -1,14 +1,14 @@
-require 'formula'
-
 class Gdal < Formula
+  desc "GDAL: Geospatial Data Abstraction Library"
   homepage 'http://www.gdal.org/'
   url "http://download.osgeo.org/gdal/1.11.2/gdal-1.11.2.tar.gz"
   sha1 "6f3ccbe5643805784812072a33c25be0bbff00db"
+  revision 1
 
   bottle do
-    sha256 "123965a1d3072569339dd0a7e3ed4d4581c09cb88389fb9425d504c480e39fad" => :yosemite
-    sha256 "fd0676432a01f4d0d25ea24355edf4f76a1a467e94ee4790c193d8745b248d7e" => :mavericks
-    sha256 "fdec0fcb9f87b8be96ee2625a680afdb0cbcc05610d669290ed5bf9047dda537" => :mountain_lion
+    sha256 "a0fd2413588bac1b4705349796cf1a93a20770ee16ae0044e56bc93ceaa18a72" => :yosemite
+    sha256 "7c33025fa16cf89fc44292ac7fe3aa50bc20a034cd48aff75336b2ab4caf2fff" => :mavericks
+    sha256 "4334496a720744b535ea88da40f5e7ddf2117cc0039345e6ba51dafc88c031b0" => :mountain_lion
   end
 
   head do
@@ -22,6 +22,7 @@ class Gdal < Formula
   option 'enable-unsupported', "Allow configure to drag in any library it can find. Invoke this at your own risk."
   option 'enable-mdb', 'Build with Access MDB driver (requires Java 1.6+ JDK/JRE, from Apple or Oracle).'
   option "with-libkml", "Build with Google's libkml driver (requires libkml --HEAD or >= 1.3)"
+  option 'with-swig-java', 'Build the swig java bindings'
 
   depends_on :python => :optional
   if build.with? "python"
@@ -70,6 +71,9 @@ class Gdal < Formula
     depends_on "poppler"
     depends_on "json-c"
   end
+
+  depends_on :java => ["1.7+", :optional, :build]
+  depends_on "swig" if build.with? "swig-java"
 
   # Extra linking libraries in configure test of armadillo may throw warning
   # see: https://trac.osgeo.org/gdal/ticket/5455
@@ -270,7 +274,7 @@ class Gdal < Formula
 
     system "./configure", *get_configure_args
     system "make"
-    system "make install"
+    system "make", "install"
 
     # `python-config` may try to talk us into building bindings for more
     # architectures than we really should.
@@ -283,6 +287,15 @@ class Gdal < Formula
     cd 'swig/python' do
       system "python", "setup.py", "install", "--prefix=#{prefix}", "--record=installed.txt", "--single-version-externally-managed"
       bin.install Dir['scripts/*']
+    end
+
+    if build.with? "swig-java"
+      cd 'swig/java' do
+        inreplace "java.opt", "linux", "darwin"
+        inreplace "java.opt", "#JAVA_HOME = /usr/lib/jvm/java-6-openjdk/", 'JAVA_HOME=$(shell echo $$JAVA_HOME)'
+        system "make"
+        system "make", "install"
+      end
     end
 
     system 'make', 'man' if build.head?

@@ -1,16 +1,17 @@
 class Imagemagick < Formula
+  desc "Tools and libraries to manipulate images in many formats"
   homepage "http://www.imagemagick.org"
-  url "http://www.imagemagick.org/download/releases/ImageMagick-6.9.1-1.tar.xz"
-  mirror "https://downloads.sourceforge.net/project/imagemagick/6.9.1-sources/ImageMagick-6.9.1-1.tar.xz"
-  sha256 "8f6ebeb1a1321fd7b7d3161a66461743ea5bbc352e4339c792b3bab52c379378"
+  url "http://www.imagemagick.org/download/releases/ImageMagick-6.9.1-5.tar.xz"
+  mirror "http://ftp.nluug.nl/ImageMagick/ImageMagick-6.9.1-5.tar.xz"
+  sha256 "34d59b83a2c3e526a7fad1fed30a950ea7b4ba2e936017a4c71581250c86352d"
 
   head "https://subversion.imagemagick.org/subversion/ImageMagick/trunk",
        :using => :svn
 
   bottle do
-    sha256 "eacabf24a4e3d99feca1a3c9786f18328a5e9dee866e710ee8c505e35cfded62" => :yosemite
-    sha256 "b346a7e2fe4f0886c0b2453f05fc66bc83463e30b2039ac04876b54d3031f4cd" => :mavericks
-    sha256 "2373116c43b825f34d84fc6302c52b4a48375487ff460a844cadb64d2f0b1768" => :mountain_lion
+    sha256 "272b5ce279b627d70fe4d37a1122da95c49edb4f824b14321da89c31e96f4d58" => :yosemite
+    sha256 "7bbc1c8690a832262e61486c9468ba45261541c93ff078b34cab5cb135cf6c57" => :mavericks
+    sha256 "11df48d83ff67fd751f5fd4456505aa57dd4c0515d1f8850e15ea034ccbc8fdb" => :mountain_lion
   end
 
   deprecated_option "enable-hdri" => "with-hdri"
@@ -18,6 +19,7 @@ class Imagemagick < Formula
   option "with-fftw", "Compile with FFTW support"
   option "with-hdri", "Compile with HDRI support"
   option "with-jp2", "Compile with Jpeg2000 support"
+  option "with-openmp", "Compile with OpenMP support"
   option "with-perl", "enable build/install of PerlMagick"
   option "with-quantum-depth-8", "Compile with a quantum depth of 8 bit"
   option "with-quantum-depth-16", "Compile with a quantum depth of 16 bit"
@@ -31,11 +33,11 @@ class Imagemagick < Formula
 
   depends_on "jpeg" => :recommended
   depends_on "libpng" => :recommended
+  depends_on "libtiff" => :recommended
   depends_on "freetype" => :recommended
 
   depends_on :x11 => :optional
   depends_on "fontconfig" => :optional
-  depends_on "libtiff" => :optional
   depends_on "little-cms" => :optional
   depends_on "little-cms2" => :optional
   depends_on "libwmf" => :optional
@@ -48,6 +50,8 @@ class Imagemagick < Formula
   depends_on "fftw" => :optional
   depends_on "pango" => :optional
 
+  needs :openmp if build.with? "openmp"
+
   skip_clean :la
 
   def install
@@ -59,9 +63,13 @@ class Imagemagick < Formula
       --enable-shared
       --disable-static
       --with-modules
-      --disable-openmp
     ]
 
+    if build.with? "openmp"
+      args << "--enable-openmp"
+    else
+      args << "--disable-openmp"
+    end
     args << "--disable-opencl" if build.without? "opencl"
     args << "--without-gslib" if build.without? "ghostscript"
     args << "--without-perl" if build.without? "perl"

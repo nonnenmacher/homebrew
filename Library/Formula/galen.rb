@@ -1,13 +1,14 @@
 class Galen < Formula
+  desc "Automated testing of look and feel for responsive websites"
   homepage "http://galenframework.com/"
-  url "https://github.com/galenframework/galen/releases/download/galen-1.6.2/galen-bin-1.6.2.zip"
-  sha256 "e4978a79e8acc854a94999b83398490b5600ed67450d0adc9b0bb319be3a70d6"
+  url "https://github.com/galenframework/galen/releases/download/galen-1.6.4/galen-bin-1.6.4.zip"
+  sha256 "f81fb9af846662fd89778654d13246184561fde11a23b67e23b144cfac56f88c"
 
   bottle do
     cellar :any
-    sha256 "f1d64ada4b7bfb1fa27e9f1b849a385c316f76b3f677e8fbd002c9d0c6460b34" => :yosemite
-    sha256 "334ad1672f09933ff04da6ff48f777408167143e077aabb4b8cdbe7f42552e62" => :mavericks
-    sha256 "e5a9b03e0a764bef6a4e0efa19ba89e18d4d1b63157dd0e77e6fa97740182a33" => :mountain_lion
+    sha256 "a8896697000cc717132626a3a5594f6a1f4c2dd8a3a6b51b380e14204621b724" => :yosemite
+    sha256 "061e77f0cd75b2ddbf2c372373f5d7ae7e72546b2bd43dba8c0dbd43fd62ca9c" => :mavericks
+    sha256 "97b5096a5a3130854aca1dd34b0a1b6f1e5f31c3364ff77be6900e0e6342922f" => :mountain_lion
   end
 
   depends_on :java => "1.6+"

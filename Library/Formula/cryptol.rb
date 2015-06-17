@@ -3,21 +3,24 @@ require "language/haskell"
 class Cryptol < Formula
   include Language::Haskell::Cabal
 
+  desc "Domain-specific language for specifying cryptographic algorithms"
   homepage "http://www.cryptol.net/"
   url "https://github.com/GaloisInc/cryptol.git",
-      :tag => "v2.2.2",
-      :revision => "6ecd07da73c5ceadd211c5ef7c371a1b2facc29b"
+      :tag => "v2.2.4",
+      :revision => "ebaa98699bfc704c5ac5a100e2829e68f3a11d9b"
   head "https://github.com/GaloisInc/cryptol.git"
 
   bottle do
-    sha256 "9484b0bd7ee276b87e5c6f097079346495896eb972be09643b3de9f52981664f" => :yosemite
-    sha256 "8ac78ea69c34dc0f8677288d085a4efe5558bd4c94095b81afd8578cdc007621" => :mavericks
-    sha256 "280b21bd7084c3714f157988a799303d2aaeb51419123af7a08c631d4bec4e0a" => :mountain_lion
+    sha256 "68e7672e7481772a3fc758682d76f55480ea9d125b889c011340f9165ff0cf76" => :yosemite
+    sha256 "d5f1fa017614729c6c849bda23d568689c17d782e1f2157254795c3486affe57" => :mavericks
+    sha256 "eeae281e614864184053d9814c75ccf796dd79303f0281234bf4cda85cfbe996" => :mountain_lion
   end
 
   depends_on "ghc" => :build
   depends_on "cabal-install" => :build
   depends_on "cvc4"
+
+  setup_ghc_compilers
 
   def install
     cabal_sandbox do

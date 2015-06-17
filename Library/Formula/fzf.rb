@@ -2,15 +2,16 @@ require "formula"
 require "language/go"
 
 class Fzf < Formula
+  desc "Fuzzy finder for your shell"
   homepage "https://github.com/junegunn/fzf"
-  url "https://github.com/junegunn/fzf/archive/0.9.10.tar.gz"
-  sha1 "a76510e2f714c09c6122c13d569d35e75d525490"
+  url "https://github.com/junegunn/fzf/archive/0.9.12.tar.gz"
+  sha256 "644f741530120856c4bd8e63b95174af172c85a2c378eaf87db9e8e4717aabb3"
   head 'https://github.com/junegunn/fzf.git'
 
   bottle do
-    sha256 "0d4e78a2366149329fb9db7f6972972608f7b15a807fc0141ef050c5b7b08c4a" => :yosemite
-    sha256 "74ec9e0f08a522036aaca48d5e4172452cba4be89e49228a34e4fc28c6bfebdf" => :mavericks
-    sha256 "aff3a0dad4c15bf9478194436aa6588f0f51587ee0ea27a10dcc6a8c7f10aa7a" => :mountain_lion
+    sha256 "285db0bacd6a94a1451fea10aede60d0ed279a4a5f33e0acc6183b2856682bd9" => :yosemite
+    sha256 "a86b5e5b95cef5e8a7f641c7aff666683ba45d322f5728ad2366bcdcc2545173" => :mavericks
+    sha256 "cbcb6535430eb6b404f023448705591d3a9767d20b973855e80fac73a80972c2" => :mountain_lion
   end
 
   depends_on "go" => :build
@@ -38,7 +39,7 @@ class Fzf < Formula
 
     prefix.install %w[install uninstall LICENSE]
     (prefix/"shell").install %w[bash zsh fish].map { |s| "shell/key-bindings.#{s}" }
-    (prefix/"shell").install "shell/completion.bash"
+    (prefix/"shell").install %w[bash zsh].map { |s| "shell/completion.#{s}" }
     (prefix/"plugin").install "plugin/fzf.vim"
     man1.install "man/man1/fzf.1"
     bin.install "bin/fzf-tmux"

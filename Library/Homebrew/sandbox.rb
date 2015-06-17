@@ -50,7 +50,13 @@ class Sandbox
   end
 
   def allow_write_log(formula)
-    allow_write_path HOMEBREW_LOGS/formula.name
+    allow_write_path formula.logs
+  end
+
+  def deny_write_homebrew_library
+    deny_write_path HOMEBREW_LIBRARY
+    deny_write_path HOMEBREW_REPOSITORY/".git"
+    deny_write HOMEBREW_BREW_FILE
   end
 
   def exec(*args)
@@ -104,10 +110,11 @@ class Sandbox
       (debug deny) ; log all denied operations to /var/log/system.log
       <%= rules.join("\n") %>
       (allow file-write*
+          (literal "/dev/ptmx")
           (literal "/dev/dtracehelper")
           (literal "/dev/null")
-          (regex #"^/dev/fd/\\d+$")
-          (regex #"^/dev/tty\\d*$")
+          (regex #"^/dev/fd/[0-9]+$")
+          (regex #"^/dev/ttys?[0-9]*$")
           )
       (deny file-write*) ; deny non-whitelist file write operations
       (allow default) ; allow everything else

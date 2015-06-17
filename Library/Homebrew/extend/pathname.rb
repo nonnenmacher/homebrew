@@ -211,6 +211,8 @@ class Pathname
       return :gzip_only
     when ".bz2"
       return :bzip2_only
+    when ".lha", ".lzh"
+      return :lha
     end
 
     # Get enough of the file to detect common file types
@@ -323,17 +325,6 @@ class Pathname
 
   def uninstall_info
     quiet_system "/usr/bin/install-info", "--delete", "--quiet", to_s, "#{dirname}/dir"
-  end
-
-  def find_formula
-    [join("Formula"), join("HomebrewFormula"), self].each do |d|
-      if d.exist?
-        d.children.each do |pn|
-          yield pn if pn.extname == ".rb"
-        end
-        break
-      end
-    end
   end
 
   # Writes an exec script in this folder for each target pathname
