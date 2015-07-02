@@ -129,7 +129,7 @@ class VCSDownloadStrategy < AbstractDownloadStrategy
       unless current_revision == @revision
         raise <<-EOS.undent
           #{@ref} tag should be #{@revision}
-          but is actually #{current_revision}!
+          but is actually #{current_revision}
         EOS
       end
     end
@@ -270,16 +270,17 @@ class CurlDownloadStrategy < AbstractFileDownloadStrategy
   def fetch
     ohai "Downloading #{@url}"
 
-    urls = actual_urls
-    unless urls.empty?
-      ohai "Downloading from: #{urls.last}"
-      if !ENV["HOMEBREW_NO_INSECURE_REDIRECT"].nil? && @url.start_with?("https://") &&
-        urls.any? { |u| !u.start_with? "https://" }
-        raise "HTTPS to HTTP redirect detected & HOMEBREW_NO_INSECURE_REDIRECT is set."
-      end
-    end
-
     unless cached_location.exist?
+      urls = actual_urls
+      unless urls.empty?
+        ohai "Downloading from #{urls.last}"
+        if !ENV["HOMEBREW_NO_INSECURE_REDIRECT"].nil? && @url.start_with?("https://") &&
+          urls.any? { |u| !u.start_with? "https://" }
+          raise "HTTPS to HTTP redirect detected & HOMEBREW_NO_INSECURE_REDIRECT is set."
+        end
+        @url = urls.last
+      end
+
       had_incomplete_download = temporary_path.exist?
       begin
         _fetch
@@ -581,6 +582,10 @@ class GitDownloadStrategy < VCSDownloadStrategy
     @shallow && support_depth?
   end
 
+  def is_shallow_clone?
+    git_dir.join("shallow").exist?
+  end
+
   def support_depth?
     @ref_type != :revision && SHALLOW_CLONE_WHITELIST.any? { |rx| rx === @url }
   end
@@ -631,7 +636,11 @@ class GitDownloadStrategy < VCSDownloadStrategy
 
   def update_repo
     if @ref_type == :branch || !has_ref?
-      quiet_safe_system 'git', 'fetch', 'origin'
+      if !shallow_clone? && is_shallow_clone?
+        quiet_safe_system 'git', 'fetch', 'origin', '--unshallow'
+      else
+        quiet_safe_system 'git', 'fetch', 'origin'
+      end
     end
   end
 

@@ -3,6 +3,7 @@ require "utils"
 require "extend/ENV"
 require "formula_cellar_checks"
 require "official_taps"
+require "tap_migrations"
 require "cmd/search"
 
 module Homebrew
@@ -19,6 +20,26 @@ module Homebrew
 
     ENV.activate_extensions!
     ENV.setup_build_environment
+
+    if ARGV.switch? "D"
+      FormulaAuditor.module_eval do
+        instance_methods.grep(/audit_/).map do |name|
+          method = instance_method(name)
+          define_method(name) do |*args, &block|
+            begin
+              time = Time.now
+              method.bind(self).call(*args, &block)
+            ensure
+              $times[name] ||= 0
+              $times[name] += Time.now - time
+            end
+          end
+        end
+      end
+
+      $times = {}
+      at_exit { puts $times.sort_by{ |k, v| v }.map{ |k, v| "#{k}: #{v}" } }
+    end
 
     ff = if ARGV.named.empty?
       Formula
@@ -185,6 +206,11 @@ class FormulaAuditor
   end
 
   @@aliases ||= Formula.aliases
+  @@remote_official_taps ||= if (homebrew_tapd = HOMEBREW_LIBRARY/"Taps/homebrew").directory?
+    OFFICIAL_TAPS - homebrew_tapd.subdirs.map(&:basename).map { |tap| tap.to_s.sub(/^homebrew-/, "") }
+  else
+    OFFICIAL_TAPS
+  end
 
   def audit_formula_name
     return unless @strict
@@ -204,14 +230,11 @@ class FormulaAuditor
       return
     end
 
-    same_name_tap_formulae = Formula.tap_names.select { |f| f =~ %r{^homebrew/[^/]+/#{name}$} }
-    homebrew_tapd = HOMEBREW_LIBRARY/"Taps/homebrew"
-    current_taps = if homebrew_tapd.directory?
-      homebrew_tapd.subdirs.map(&:basename).map { |tap| tap.to_s.sub(/^homebrew-/, "") }
-    else
-      []
+    same_name_tap_formulae = Formula.tap_names.select do |tap_formula_name|
+      user_name, _, formula_name = tap_formula_name.split("/", 3)
+      user_name == "homebrew" && formula_name == name
     end
-    same_name_tap_formulae += (OFFICIAL_TAPS - current_taps).map do |tap|
+    same_name_tap_formulae += @@remote_official_taps.map do |tap|
       Thread.new { Homebrew.search_tap "homebrew", tap, name }
     end.map(&:value).flatten
     same_name_tap_formulae.delete(full_name)
@@ -398,11 +421,11 @@ class FormulaAuditor
   end
 
   def audit_specs
-    if head_only?(formula) && formula.tap.downcase != "homebrew/homebrew-head-only"
+    if head_only?(formula) && formula.tap.to_s.downcase != "homebrew/homebrew-head-only"
       problem "Head-only (no stable download)"
     end
 
-    if devel_only?(formula) && formula.tap.downcase != "homebrew/homebrew-devel-only"
+    if devel_only?(formula) && formula.tap.to_s.downcase != "homebrew/homebrew-devel-only"
       problem "Devel-only (no stable download)"
     end
 
@@ -747,6 +770,20 @@ class FormulaAuditor
     end
   end
 
+  def audit_reverse_migration
+    # Only enforce for new formula being re-added to core
+    return unless @strict
+    return unless formula.core_formula?
+
+    if TAP_MIGRATIONS.has_key?(formula.name)
+      problem <<-EOS.undent
+       #{formula.name} seems to be listed in tap_migrations.rb!
+       Please remove #{formula.name} from present tap & tap_migrations.rb
+       before submitting it to Homebrew/homebrew.
+      EOS
+    end
+  end
+
   def audit_prefix_has_contents
     return unless formula.prefix.directory?
 
@@ -801,6 +838,7 @@ class FormulaAuditor
     text.without_patch.split("\n").each_with_index { |line, lineno| audit_line(line, lineno+1) }
     audit_installed
     audit_prefix_has_contents
+    audit_reverse_migration
   end
 
   private
