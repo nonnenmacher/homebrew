@@ -6,14 +6,15 @@ require "formula"
 class YoutubeDl < Formula
   desc "Download YouTube videos from the command-line"
   homepage "https://rg3.github.io/youtube-dl/"
-  url "https://yt-dl.org/downloads/2015.06.25/youtube-dl-2015.06.25.tar.gz"
-  sha256 "6e64f50ba8e74e11318be19c72be56bdcf00673841ea77716a10967e04c48628"
+  url "https://yt-dl.org/downloads/2015.07.07/youtube-dl-2015.07.07.tar.gz"
+  sha256 "634d7a3c369a245e67317ddb4043f8167bce3e774e1246ecb7c2707d311c2b4e"
 
   bottle do
     cellar :any
-    sha256 "bd25eb89c3d31f7123d6b89cb87004aa3836340bd16690aa06ab484468cede6a" => :yosemite
-    sha256 "c139850ba1632eb79d0f4cc575f00268c2a4753edab0b76c1b8c6321bc4c74d9" => :mavericks
-    sha256 "b7e91faae228468f7a91633b8bb2b9e1637389baf62f9afff4483c46e6ea19f7" => :mountain_lion
+    revision 1
+    sha256 "d4fc2c4ad4706a9df565c28150782719fa1d3fd23b9b2994df3fbe317f260132" => :yosemite
+    sha256 "1f76e4aa5b659ee60cc9f28a13c0a109ef2fd2bcd966b1c695c3d725eb811e10" => :mavericks
+    sha256 "7d1746d6a1b325c4b54f7247f819a8e328f6240ea7253e0efcc49d95030c0985" => :mountain_lion
   end
 
   head do
@@ -29,6 +30,7 @@ class YoutubeDl < Formula
     man1.install "youtube-dl.1"
     bash_completion.install "youtube-dl.bash-completion"
     zsh_completion.install "youtube-dl.zsh" => "_youtube-dl"
+    fish_completion.install "youtube-dl.fish"
   end
 
   def caveats
