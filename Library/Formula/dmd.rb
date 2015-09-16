@@ -1,36 +1,74 @@
-require "formula"
-
 class Dmd < Formula
   desc "D programming language compiler for OS X"
   homepage "http://dlang.org"
-  url "https://github.com/D-Programming-Language/dmd/archive/v2.067.1.tar.gz"
-  sha1 "05eed2bcd850cd5be88e7f20f31d19f10b17dc5d"
+
+  stable do
+    url "https://github.com/D-Programming-Language/dmd/archive/v2.068.1.tar.gz"
+    sha256 "8f2865d480392aa821b5a028956d92a52400dc73d17b23c12d06d136100324ad"
+
+    resource "druntime" do
+      url "https://github.com/D-Programming-Language/druntime/archive/v2.068.1.tar.gz"
+      sha256 "3730b763717e3eb08c19c207bc23162b8b9fe7368d70a3bb8498a26e0377eb18"
+    end
+
+    resource "phobos" do
+      url "https://github.com/D-Programming-Language/phobos/archive/v2.068.1.tar.gz"
+      sha256 "5326f509e42193ad56cb5fdbde26ec403fd1f1eac559fbc56f957a7f9bd14c8a"
+    end
+
+    resource "tools" do
+      url "https://github.com/D-Programming-Language/tools/archive/v2.068.1.tar.gz"
+      sha256 "a0b4362291949f1e88e32d89280860c08dfd00f34a235ebe276c8555b9862f4c"
+    end
+  end
 
   bottle do
-    sha256 "b8275d7fc008a679c964f65bae94ef4bfc49b0df5ad06b6ba209666cc102af04" => :yosemite
-    sha256 "2a622f2cfaf3b2c3d877263a3799ac30b3faf25bffbf65a4694f2ee63c073916" => :mavericks
-    sha256 "cc6270157c3507acb81dcb60ff4447aedc24077a22995d1e5ec08c3edd0d9a96" => :mountain_lion
+    sha256 "299e743830a1bf9f3ce699bf1197015037ed733451134f8aff692a5962e4c53b" => :yosemite
+    sha256 "0edba178cdcb6221807b4729f21118fec804910d8ac297d7785cf3303ee2ab50" => :mavericks
+    sha256 "36f6979d5208fde59177239d81bde37174bc7574bff7748c4cb859cc3d755712" => :mountain_lion
   end
 
-  resource "druntime" do
-    url "https://github.com/D-Programming-Language/druntime/archive/v2.067.1.tar.gz"
-    sha1 "c0664530ad1e38d4535f2d4df1ba733dff44785e"
+  devel do
+    url "https://github.com/D-Programming-Language/dmd/archive/v2.068.2-b2.tar.gz"
+    version "2.068.2-b2"
+    sha256 "885a6edc40e558b556b06cf0828baa93e5b25546ec94f08bdd77657e8269c8ba"
+
+    resource "druntime" do
+      url "https://github.com/D-Programming-Language/druntime/archive/v2.068.2-b2.tar.gz"
+      sha256 "bd331b726641593c6c2408d7562f94e5fd9dabe03f48856eb1963aabc339c0fd"
+    end
+
+    resource "phobos" do
+      url "https://github.com/D-Programming-Language/phobos/archive/v2.068.2-b2.tar.gz"
+      sha256 "06a553202a0b5d51b14f735dfb68c804736d036329da6145246bd9047c6ac1d7"
+    end
+
+    resource "tools" do
+      url "https://github.com/D-Programming-Language/tools/archive/v2.068.2-b2.tar.gz"
+      sha256 "ed7503daff2542ba6dc3dcb2f9f169179168ef623e2c73774b702ea14a0bc79a"
+    end
   end
 
-  resource "phobos" do
-    url "https://github.com/D-Programming-Language/phobos/archive/v2.067.1.tar.gz"
-    sha1 "5cc3fe9a33bee926a605a1308dbdc48f3a71a899"
-  end
+  head do
+    url "https://github.com/D-Programming-Language/dmd.git"
 
-  resource "tools" do
-    url "https://github.com/D-Programming-Language/tools/archive/v2.067.1.tar.gz"
-    sha1 "00c2442ffaa1001870aa37c73e94ec3b50266c6f"
+    resource "druntime" do
+      url "https://github.com/D-Programming-Language/druntime.git"
+    end
+
+    resource "phobos" do
+      url "https://github.com/D-Programming-Language/phobos.git"
+    end
+
+    resource "tools" do
+      url "https://github.com/D-Programming-Language/tools.git"
+    end
   end
 
   def install
     make_args = ["INSTALL_DIR=#{prefix}", "MODEL=#{Hardware::CPU.bits}", "-f", "posix.mak"]
 
-    system "make", "SYSCONFDIR=#{etc}", "TARGET_CPU=X86", "RELEASE=1", *make_args
+    system "make", "SYSCONFDIR=#{etc}", "TARGET_CPU=X86", "AUTO_BOOTSTRAP=1", "RELEASE=1", *make_args
 
     bin.install "src/dmd"
     prefix.install "samples"
@@ -58,7 +96,6 @@ class Dmd < Formula
     (include/"d2").install Dir["druntime/import/*"]
     cp_r ["phobos/std", "phobos/etc"], include/"d2"
     lib.install Dir["druntime/lib/*", "phobos/**/libphobos2.a"]
-
 
     resource("tools").stage do
       inreplace "posix.mak", "install: $(TOOLS) $(CURL_TOOLS)", "install: $(TOOLS) $(ROOT)/dustmite"

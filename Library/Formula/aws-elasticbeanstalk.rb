@@ -1,14 +1,14 @@
 class AwsElasticbeanstalk < Formula
   desc "Client for Amazon Elastic Beanstalk web service"
   homepage "https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-reference-eb.html"
-  url "https://pypi.python.org/packages/source/a/awsebcli/awsebcli-3.4.6.tar.gz"
-  sha256 "bcec729ddad5731eb0169ed423cc13b90ab5081353db477f9bae4721b66ede7c"
+  url "https://pypi.python.org/packages/source/a/awsebcli/awsebcli-3.5.2.tar.gz"
+  sha256 "a753dbff9a9888b50ba13b221e6e8126e4697a1d61ba871e37c4ac782686da5f"
 
   bottle do
     cellar :any
-    sha256 "68ab929a539ef4e981664ead1c7e5457261dc6361dbc8a05eb988b1a4b6b613c" => :yosemite
-    sha256 "923f02ea4c138dcf28f1ab48d381cc8aa9fc8b75ffede68cd81ac7a90f27d05f" => :mavericks
-    sha256 "c0260f0068ecb4952a292394139da5480efe012ee281d9addaea1a39782b9901" => :mountain_lion
+    sha256 "ec44af8ab9fc51446473ce3fa5edcbd5716499f9289835e4e1cc5d2641dd4dbf" => :yosemite
+    sha256 "f84bf6bf4eb725d9cf9e426ff911d4104452ad27b822108876f731e5bed976d1" => :mavericks
+    sha256 "2446bac9c61c10df947cef2ff570742517518adde5a96c31ca8652136b651c3d" => :mountain_lion
   end
 
   depends_on :python if MacOS.version <= :snow_leopard
@@ -76,6 +76,31 @@ class AwsElasticbeanstalk < Formula
   resource "six" do
     url "https://pypi.python.org/packages/source/s/six/six-1.9.0.tar.gz"
     sha256 "e24052411fc4fbd1f672635537c3fc2330d9481b18c0317695b46259512c91d5"
+  end
+
+  resource "blessed" do
+    url "https://pypi.python.org/packages/source/b/blessed/blessed-1.9.5.tar.gz"
+    sha256 "b93b5c7600814638c0913c8325608327a24e3731977d9a4f003ecf37b08ca6e5"
+  end
+
+  resource "colorama" do
+    url "https://pypi.python.org/packages/source/c/colorama/colorama-0.3.3.tar.gz"
+    sha256 "eb21f2ba718fbf357afdfdf6f641ab393901c7ca8d9f37edd0bee4806ffa269c"
+  end
+
+  resource "botocore" do
+    url "https://pypi.python.org/packages/source/b/botocore/botocore-1.1.8.tar.gz"
+    sha256 "636d6d64537d5e2f3345587366533a1cc503b50a7d295998bffc89ecc3555f63"
+  end
+
+  resource "wcwidth" do
+    url "https://pypi.python.org/packages/source/w/wcwidth/wcwidth-0.1.4.tar.gz"
+    sha256 "906d3123045d77027b49fe912458e1a1e1d6ca1a51558a4bd9168d143b129d2b"
+  end
+
+  resource "docutils" do
+    url "https://pypi.python.org/packages/source/d/docutils/docutils-0.12.tar.gz"
+    sha256 "c7db717810ab6965f66c8cf0398a98c9d8df982da39b4cd7f162911eb89596fa"
   end
 
   def install

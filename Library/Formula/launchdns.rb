@@ -3,12 +3,14 @@ class Launchdns < Formula
   homepage "https://github.com/josh/launchdns"
   url "https://github.com/josh/launchdns/archive/v1.0.1.tar.gz"
   head "https://github.com/josh/launchdns.git"
-  sha1 "7310bb558a3b910e98b5364652e3a4fb48375494"
+  sha256 "e96d1b92819a294f1e325df629ae4bf202fd137b8504cf4ddd00cda7e47f7099"
 
   bottle do
-    sha1 "592ca0ff9d89f00613dd850be91fa15a8d2cfc6a" => :yosemite
-    sha1 "9ff650e25b17a1f29e9965c5e5bc678fc82d32aa" => :mavericks
-    sha1 "ffb5f5e33aa4429c4ada07f5992dbef2853b2cb5" => :mountain_lion
+    cellar :any
+    revision 1
+    sha256 "3b6276a21a4a1523d6e14d34ae7332c7f39ee2544b61bfad2b32dcb9f0761576" => :yosemite
+    sha256 "7075bad8ec1f01f4b8deb59492b406bf4915d1e249aa0ea44d2615646af25bde" => :mavericks
+    sha256 "3b7e3ac513be0817414d7930f524887da956f331a7344df555e4c4c1083a7e43" => :mountain_lion
   end
 
   def install
@@ -24,7 +26,7 @@ class Launchdns < Formula
 
   def caveats; <<-EOS.undent
       To have *.dev resolved to 127.0.0.1:
-          sudo ln -s #{HOMEBREW_PREFIX}/etc/resolver /etc/resolver
+          sudo ln -s #{HOMEBREW_PREFIX}/etc/resolver /etc
     EOS
   end
 

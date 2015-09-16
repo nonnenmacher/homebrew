@@ -1,22 +1,23 @@
-require 'formula'
-
 class Zsh < Formula
-  desc "A UNIX shell (command interpreter)"
-  homepage 'http://www.zsh.org/'
-  url 'https://downloads.sourceforge.net/project/zsh/zsh/5.0.8/zsh-5.0.8.tar.bz2'
-  mirror 'http://www.zsh.org/pub/zsh-5.0.8.tar.bz2'
-  sha256 '8079cf08cb8beff22f84b56bd72bb6e6962ff4718d816f3d83a633b4c9e17d23'
+  desc "UNIX shell (command interpreter)"
+  homepage "http://www.zsh.org/"
+  url "https://downloads.sourceforge.net/project/zsh/zsh/5.1/zsh-5.1.tar.gz"
+  mirror "http://www.zsh.org/pub/zsh-5.1.tar.gz"
+  sha256 "e3731381810e690fb955cedfa8be51b0934bfa1ff38c709f54138960e3decd99"
 
   bottle do
-    sha256 "86da8afbbaa7a5a84b6362638f101a0698ac669a55282991c3488de4c1f6d6f3" => :yosemite
-    sha256 "748fd3b2f72b74bc63639aaa0b9bff59cd25592b94b4b84b4574cde7d0399fe8" => :mavericks
-    sha256 "808e64fa41634261b1427eff37ba4b1f1708d642504461c63cc3d10c073c735a" => :mountain_lion
+    sha256 "1509f461b1dee825cb66183409c04820f71e559c116201c4073ccd97eeb67704" => :el_capitan
+    sha256 "ef2e5dd13668edd59725b6a320db7513a6635ec7d3fd30891eb4e87ace6887e8" => :yosemite
+    sha256 "313444fc801db870fce3855e3ecda1f8a63aa24e44aaa448805d2dd61e62d584" => :mavericks
+    sha256 "78563c521de6861a2278f8e9d44aa8eac86e5c699d0d75018f805ec34286c9cd" => :mountain_lion
   end
 
-  depends_on 'gdbm'
-  depends_on 'pcre'
+  option "without-etcdir", "Disable the reading of Zsh rc files in /etc"
 
-  option 'disable-etcdir', 'Disable the reading of Zsh rc files in /etc'
+  deprecated_option "disable-etcdir" => "without-etcdir"
+
+  depends_on "gdbm"
+  depends_on "pcre"
 
   def install
     args = %W[
@@ -34,10 +35,10 @@ class Zsh < Formula
       --with-tcsetpgrp
     ]
 
-    if build.include? 'disable-etcdir'
-      args << '--disable-etcdir'
+    if build.without? "etcdir"
+      args << "--disable-etcdir"
     else
-      args << '--enable-etcdir=/etc'
+      args << "--enable-etcdir=/etc"
     end
 
     system "./configure", *args
@@ -50,15 +51,16 @@ class Zsh < Formula
     system "make", "install.info"
   end
 
-  test do
-    system "#{bin}/zsh", "--version"
-  end
-
   def caveats; <<-EOS.undent
     Add the following to your zshrc to access the online help:
       unalias run-help
       autoload run-help
       HELPDIR=#{HOMEBREW_PREFIX}/share/zsh/help
     EOS
+  end
+
+  test do
+    assert_equal "homebrew\n",
+      shell_output("#{bin}/zsh -c 'echo homebrew'")
   end
 end

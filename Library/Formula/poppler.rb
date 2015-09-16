@@ -1,13 +1,13 @@
 class Poppler < Formula
   desc "PDF rendering library (based on the xpdf-3.0 code base)"
   homepage "http://poppler.freedesktop.org"
-  url "http://poppler.freedesktop.org/poppler-0.34.0.tar.xz"
-  sha256 "1ba4ba9a2f9eb1e62ee6d736f4d82be4fc5f6dd177dc2b03febbe2ef2e515cb0"
+  url "http://poppler.freedesktop.org/poppler-0.35.0.tar.xz"
+  sha256 "e86755b1a4df6efe39d84f581c11bcb0e34976166a671a7b700c28ebaa3e2189"
 
   bottle do
-    sha256 "9790fe0ca3efc8a222a3d3a63f8d5642a1384f223ad60b3e44b6440ca2829fc2" => :yosemite
-    sha256 "91bb51dcaf01c58fcc1c427b0842a17d3988cc008d73137f98f03b52bba94e67" => :mavericks
-    sha256 "077188f3fa1096f9a97eb3373aac6c40e36a189d3b03993579ef76829a9d7ea3" => :mountain_lion
+    sha256 "2ddef226bf71ff00ddf27548eadc1adf8d26c925c72da4d46dc4478570ec4912" => :yosemite
+    sha256 "29dd0e5951b599037ec093b1cf32c6786777c3da8448fa5a39967e3b7da5aa7b" => :mavericks
+    sha256 "ca7a9973bb34ca53097aadd1c43edaf8377a6ec25b80176e71ad7c7b7556566c" => :mountain_lion
   end
 
   option "with-qt", "Build Qt backend"
@@ -41,6 +41,8 @@ class Poppler < Formula
   end
 
   def install
+    ENV["LIBOPENJPEG_CFLAGS"] = "-I#{Formula["openjpeg"].opt_include}/openjpeg-1.5"
+
     args = %W[
       --disable-dependency-tracking
       --prefix=#{prefix}
