@@ -5,11 +5,12 @@ class Osquery < Formula
   url "https://github.com/facebook/osquery.git",
       :tag => "1.5.3",
       :revision => "2a71162b0cfb040a3606538857f512ea8894b9e7"
+  revision 2
 
   bottle do
-    sha256 "c913585251111789e84a6051edc728f909989ae0bb2396760d043acfc5a42f28" => :el_capitan
-    sha256 "6bdf465ca5fce44b523f0e75ef951a43bddad9a433f7815704e53a4ea19f1e4a" => :yosemite
-    sha256 "07260cbd5a1d7c7c9f3796f7ccac951b2aa2cd32a5e1ba7b9cfd40bbf3b1cb7c" => :mavericks
+    sha256 "e126a3c8df2915f900480e1ea06329bd480000cc3a39c7a179e06ee45badcf99" => :el_capitan
+    sha256 "13151ea0753c9093cf94cc06c912f99fcf5d4035daf36bb250cc1ecfeccfd6e0" => :yosemite
+    sha256 "89807433f886d43471e20ce91400aed1ddfd5146de028608cba1c9e80cf7e654" => :mavericks
   end
 
   # osquery only supports OS X 10.9 and above. Do not remove this.

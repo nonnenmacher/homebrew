@@ -116,6 +116,7 @@ class Checks
       "libntfs-3g.*.dylib", # NTFS-3G
       "libntfs.*.dylib", # NTFS-3G
       "libublio.*.dylib", # NTFS-3G
+      "libUFSDNTFS.dylib", # Paragon NTFS
     ]
 
     __check_stray_files "/usr/local/lib", "*.dylib", white_list, <<-EOS.undent
@@ -242,7 +243,7 @@ class Checks
     if !ARGV.homebrew_developer? && MacOS.version >= "10.12" then <<-EOS.undent
     You are using OS X #{MacOS.version}.
     We do not provide support for this pre-release version.
-    You may encounter build failures or other breakage.
+    You may encounter build failures or other breakages.
     EOS
     end
   end
@@ -1164,7 +1165,7 @@ class Checks
       if !(HOMEBREW_REPOSITORY/"Library/LinkedKegs"/rack.basename).directory?
         begin
           Formulary.from_rack(rack).keg_only?
-        rescue FormulaUnavailableError, TapFormulaAmbiguityError
+        rescue FormulaUnavailableError, TapFormulaAmbiguityError, TapFormulaWithOldnameAmbiguityError
           false
         end
       else
