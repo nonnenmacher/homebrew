@@ -125,11 +125,15 @@ module HomebrewArgvExtension
   end
 
   def homebrew_developer?
-    include?("--homebrew-developer") || !ENV["HOMEBREW_DEVELOPER"].nil?
+    !ENV["HOMEBREW_DEVELOPER"].nil?
   end
 
   def sandbox?
     include?("--sandbox") || !ENV["HOMEBREW_SANDBOX"].nil?
+  end
+
+  def no_sandbox?
+    include?("--no-sandbox") || !ENV["HOMEBREW_NO_SANDBOX"].nil?
   end
 
   def ignore_deps?
@@ -191,7 +195,7 @@ module HomebrewArgvExtension
   # eg. `foo -ns -i --bar` has three switches, n, s and i
   def switch?(char)
     return false if char.length > 1
-    options_only.any? { |arg| arg[1, 1] != "-" && arg.include?(char) }
+    options_only.any? { |arg| arg.scan("-").size == 1 && arg.include?(char) }
   end
 
   def usage

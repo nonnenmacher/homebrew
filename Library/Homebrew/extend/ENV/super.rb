@@ -28,7 +28,7 @@ module Superenv
   def self.bin
     return unless MacOS.has_apple_developer_tools?
 
-    bin = (HOMEBREW_REPOSITORY/"Library/ENV").subdirs.reject { |d| d.basename.to_s > MacOS::Xcode.version }.max
+    bin = HOMEBREW_ENV_PATH.subdirs.reject { |d| d.basename.to_s > MacOS::Xcode.version }.max
     bin.realpath unless bin.nil?
   end
 
@@ -66,6 +66,11 @@ module Superenv
     self["HOMEBREW_ISYSTEM_PATHS"] = determine_isystem_paths
     self["HOMEBREW_INCLUDE_PATHS"] = determine_include_paths
     self["HOMEBREW_LIBRARY_PATHS"] = determine_library_paths
+
+    if MacOS::Xcode.without_clt? || (MacOS::Xcode.installed? && MacOS::Xcode.version.to_i >= 7)
+      self["MACOSX_DEPLOYMENT_TARGET"] = MacOS.version.to_s
+      self["SDKROOT"] = MacOS.sdk_path
+    end
 
     # On 10.9, the tools in /usr/bin proxy to the active developer directory.
     # This means we can use them for any combination of CLT and Xcode.
@@ -145,7 +150,7 @@ module Superenv
   end
 
   def determine_pkg_config_libdir
-    paths = %W[/usr/lib/pkgconfig #{HOMEBREW_LIBRARY}/ENV/pkgconfig/#{MacOS.version}]
+    paths = %W[/usr/lib/pkgconfig #{HOMEBREW_ENV_PATH}/pkgconfig/#{MacOS.version}]
     paths << "#{MacOS::X11.lib}/pkgconfig" << "#{MacOS::X11.share}/pkgconfig" if x11?
     paths.to_path_s
   end
@@ -258,11 +263,13 @@ module Superenv
   alias_method :j1, :deparallelize
 
   def make_jobs
-    self["MAKEFLAGS"] =~ /-\w*j(\d)+/
+    self["MAKEFLAGS"] =~ /-\w*j(\d+)/
     [$1.to_i, 1].max
   end
 
   def universal_binary
+    check_for_compiler_universal_support
+
     self["HOMEBREW_ARCHFLAGS"] = Hardware::CPU.universal_archs.as_arch_flags
 
     # GCC doesn't accept "-march" for a 32-bit CPU with "-arch x86_64"

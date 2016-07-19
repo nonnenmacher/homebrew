@@ -26,6 +26,12 @@ class AbstractDownloadStrategy
   def cached_location
   end
 
+  # @!attribute [r]
+  # return most recent modified time for all files in the current working directory after stage.
+  def source_modified_time
+    Pathname.pwd.to_enum(:find).select(&:file?).map(&:mtime).max
+  end
+
   # Remove {#cached_location} and any other files associated with the resource
   # from the cache.
   def clear_cache
@@ -184,7 +190,8 @@ class AbstractFileDownloadStrategy < AbstractDownloadStrategy
       with_system_path { buffered_write("bunzip2") }
     when :gzip, :bzip2, :compress, :tar
       # Assume these are also tarred
-      with_system_path { safe_system "tar", "xf", cached_location }
+      tar_flags = (ARGV.verbose? && ENV["TRAVIS"].nil?) ? "xvf" : "xf"
+      with_system_path { safe_system "tar", tar_flags, cached_location }
       chdir
     when :xz
       with_system_path { pipe_to_tar(xzpath) }
@@ -444,7 +451,7 @@ class S3DownloadStrategy < CurlDownloadStrategy
       raise
     end
 
-    if @url !~ %r{^https?://+([^.]+).s3.amazonaws.com/+(.+)$}
+    if @url !~ %r{^https?://([^.].*)\.s3\.amazonaws\.com/(.+)$}
       raise "Bad S3 URL: " + @url
     end
     bucket = $1
@@ -552,6 +559,10 @@ class GitDownloadStrategy < VCSDownloadStrategy
   def stage
     super
     cp_r File.join(cached_location, "."), Dir.pwd
+  end
+
+  def source_modified_time
+    Time.parse Utils.popen_read("git", "--git-dir", git_dir, "show", "-s", "--format=%cD")
   end
 
   private

@@ -143,7 +143,7 @@ class Caveats
     if keg && keg.elisp_installed?
       <<-EOS.undent
         Emacs Lisp files have been installed to:
-        #{HOMEBREW_PREFIX}/share/emacs/site-lisp/#{f.name}
+          #{HOMEBREW_PREFIX}/share/emacs/site-lisp/#{f.name}
       EOS
     end
   end
@@ -212,6 +212,6 @@ class Caveats
 
       s << "" << "WARNING: launchctl will fail when run under tmux." if ENV["TMUX"]
     end
-    s.join("\n") unless s.empty?
+    s.join("\n") + "\n" unless s.empty?
   end
 end

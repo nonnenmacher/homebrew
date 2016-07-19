@@ -8,7 +8,6 @@ require "caveats"
 require "cleaner"
 require "formula_cellar_checks"
 require "install_renamed"
-require "cmd/tap"
 require "cmd/postinstall"
 require "hooks/bottles"
 require "debrew"
@@ -79,16 +78,29 @@ class FormulaInstaller
     return false if @pour_failed
 
     bottle = formula.bottle
-    return true  if force_bottle? && bottle
+    return false unless bottle
+    return true  if force_bottle?
     return false if build_from_source? || build_bottle? || interactive?
+    return false if ARGV.cc
     return false unless options.empty?
     return false if formula.bottle_disabled?
     return true  if formula.local_bottle_path
-    return false unless bottle && formula.pour_bottle?
+    unless formula.pour_bottle?
+      if install_bottle_options[:warn] && formula.pour_bottle_check_unsatisfied_reason
+        opoo <<-EOS.undent
+          Building #{formula.full_name} from source:
+            #{formula.pour_bottle_check_unsatisfied_reason}
+        EOS
+      end
+      return false
+    end
 
     unless bottle.compatible_cellar?
       if install_bottle_options[:warn]
-        opoo "Building source; cellar of #{formula.full_name}'s bottle is #{bottle.cellar}"
+        opoo <<-EOS.undent
+          Building #{formula.full_name} from source:
+            The bottle needs a #{bottle.cellar} Cellar (yours is #{HOMEBREW_CELLAR}).
+        EOS
       end
       return false
     end
@@ -106,6 +118,7 @@ class FormulaInstaller
   end
 
   def prelude
+    Tab.clear_cache
     verify_deps_exist unless skip_deps_check?
     lock
     check_install_sanity
@@ -113,12 +126,13 @@ class FormulaInstaller
 
   def verify_deps_exist
     begin
-      formula.recursive_dependencies.map(&:to_formula)
+      compute_dependencies
     rescue TapFormulaUnavailableError => e
-      if Homebrew.install_tap(e.user, e.repo)
-        retry
-      else
+      if e.tap.installed?
         raise
+      else
+        e.tap.install
+        retry
       end
     end
   rescue FormulaUnavailableError => e
@@ -134,7 +148,7 @@ class FormulaInstaller
         dep.installed? && !dep.keg_only? && !dep.linked_keg.directory?
       end
       raise CannotInstallFormulaError,
-        "You must `brew link #{unlinked_deps*" "}' before #{formula.full_name} can be installed" unless unlinked_deps.empty?
+        "You must `brew link #{unlinked_deps*" "}` before #{formula.full_name} can be installed" unless unlinked_deps.empty?
     end
   end
 
@@ -158,7 +172,7 @@ class FormulaInstaller
       # some other version is already installed *and* linked
       raise CannotInstallFormulaError, <<-EOS.undent
         #{formula.name}-#{formula.linked_keg.resolved_path.basename} already installed
-        To install this version, first `brew unlink #{formula.name}'
+        To install this version, first `brew unlink #{formula.name}`
       EOS
     end
 
@@ -200,7 +214,7 @@ class FormulaInstaller
           formula.prefix.rmtree if formula.prefix.directory?
           formula.rack.rmdir_if_possible
         end
-        raise if ARGV.homebrew_developer?
+        raise if ARGV.homebrew_developer? || e.is_a?(Interrupt)
         @pour_failed = true
         onoe e.message
         opoo "Bottle installation failed: building from source."
@@ -285,7 +299,7 @@ class FormulaInstaller
   def install_requirement_default_formula?(req, dependent, build)
     return false unless req.default_formula?
     return true unless req.satisfied?
-    return false if req.tags.include?(:run)
+    return false if req.run?
     install_bottle_for?(dependent, build) || build_bottle?
   end
 
@@ -347,6 +361,7 @@ class FormulaInstaller
     args  = dependent.build.used_options
     args |= dependent == formula ? options : inherited_options
     args |= Tab.for_formula(dependent).used_options
+    args &= dependent.options
     BuildOptions.new(args, dependent.options)
   end
 
@@ -502,6 +517,7 @@ class FormulaInstaller
     args << "--verbose" if verbose?
     args << "--debug" if debug?
     args << "--cc=#{ARGV.cc}" if ARGV.cc
+    args << "--default-fortran-flags" if ARGV.include? "--default-fortran-flags"
 
     if ARGV.env
       args << "--env=#{ARGV.env}"
@@ -571,7 +587,9 @@ class FormulaInstaller
       end
     end
 
-    raise "Empty installation" if Dir["#{formula.prefix}/*"].empty?
+    if !formula.prefix.directory? || Keg.new(formula.prefix).empty_installation?
+      raise "Empty installation"
+    end
 
   rescue Exception
     ignore_interrupts do
@@ -671,7 +689,7 @@ class FormulaInstaller
   end
 
   def fix_install_names(keg)
-    keg.fix_install_names(:keg_only => formula.keg_only?)
+    keg.fix_install_names
   rescue Exception => e
     onoe "Failed to fix install names"
     puts "The formula built, but you may encounter issues using it or linking other"
@@ -720,7 +738,7 @@ class FormulaInstaller
     keg = Keg.new(formula.prefix)
     unless formula.bottle_specification.skip_relocation?
       keg.relocate_install_names Keg::PREFIX_PLACEHOLDER, HOMEBREW_PREFIX.to_s,
-        Keg::CELLAR_PLACEHOLDER, HOMEBREW_CELLAR.to_s, :keg_only => formula.keg_only?
+        Keg::CELLAR_PLACEHOLDER, HOMEBREW_CELLAR.to_s
     end
     keg.relocate_text_files Keg::PREFIX_PLACEHOLDER, HOMEBREW_PREFIX.to_s,
       Keg::CELLAR_PLACEHOLDER, HOMEBREW_CELLAR.to_s
@@ -740,6 +758,8 @@ class FormulaInstaller
 
     tab.tap = formula.tap
     tab.poured_from_bottle = true
+    tab.time = Time.now.to_i
+    tab.head = Homebrew.git_head
     tab.write
   end
 

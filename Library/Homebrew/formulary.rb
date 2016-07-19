@@ -1,5 +1,5 @@
 require "digest/md5"
-require "formula_renames"
+require "tap"
 
 # The Formulary is responsible for creating instances of Formula.
 # It is not meant to be used directy from formulae.
@@ -145,16 +145,18 @@ class Formulary
 
     def initialize(tapped_name)
       user, repo, name = tapped_name.split("/", 3).map(&:downcase)
-      @tap = Tap.fetch user, repo.sub(/^homebrew-/, "")
-      name = @tap.formula_renames.fetch(name, name)
-      path = @tap.formula_files.detect { |file| file.basename(".rb").to_s == name }
+      @tap = Tap.fetch user, repo
+      formula_dir = @tap.formula_dir || @tap.path
+      path = formula_dir/"#{name}.rb"
 
-      unless path
-        if (possible_alias = @tap.path/"Aliases/#{name}").file?
+      unless path.file?
+        if (possible_alias = @tap.alias_dir/name).file?
           path = possible_alias.resolved_path
           name = path.basename(".rb").to_s
-        else
-          path = @tap.path/"#{name}.rb"
+        elsif (new_name = @tap.formula_renames[name]) &&
+              (new_path = formula_dir/"#{new_name}.rb").file?
+          path = new_path
+          name = new_name
         end
       end
 
@@ -262,14 +264,6 @@ class Formulary
       return FromUrlLoader.new(ref)
     when Pathname::BOTTLE_EXTNAME_RX
       return BottleLoader.new(ref)
-    when HOMEBREW_CORE_FORMULA_REGEX
-      name = $1
-      formula_with_that_name = core_path(name)
-      if (newname = FORMULA_RENAMES[name]) && !formula_with_that_name.file?
-        return FormulaLoader.new(newname, core_path(newname))
-      else
-        return FormulaLoader.new(name, formula_with_that_name)
-      end
     when HOMEBREW_TAP_FORMULA_REGEX
       return TapLoader.new(ref)
     end
@@ -283,7 +277,7 @@ class Formulary
       return FormulaLoader.new(ref, formula_with_that_name)
     end
 
-    possible_alias = Pathname.new("#{HOMEBREW_LIBRARY}/Aliases/#{ref}")
+    possible_alias = CoreTap.instance.alias_dir/ref
     if possible_alias.file?
       return AliasLoader.new(possible_alias)
     end
@@ -297,7 +291,7 @@ class Formulary
       return FormulaLoader.new(name, path)
     end
 
-    if newref = FORMULA_RENAMES[ref]
+    if newref = CoreTap.instance.formula_renames[ref]
       formula_with_that_oldname = core_path(newref)
       if formula_with_that_oldname.file?
         return FormulaLoader.new(newref, formula_with_that_oldname)
@@ -326,7 +320,7 @@ class Formulary
   end
 
   def self.core_path(name)
-    Pathname.new("#{HOMEBREW_LIBRARY}/Formula/#{name.downcase}.rb")
+    CoreTap.instance.formula_dir/"#{name.downcase}.rb"
   end
 
   def self.tap_paths(name, taps = Dir["#{HOMEBREW_LIBRARY}/Taps/*/*/"])
@@ -350,7 +344,7 @@ class Formulary
       if core_path(ref).file?
         opoo <<-EOS.undent
           #{ref} is provided by core, but is now shadowed by #{selected_formula.full_name}.
-          To refer to the core formula, use Homebrew/homebrew/#{ref} instead.
+          To refer to the core formula, use Homebrew/core/#{ref} instead.
         EOS
       end
       selected_formula

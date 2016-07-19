@@ -8,11 +8,17 @@ def blacklisted?(name)
     and only builds 32-bit (and thus can't use Homebrew deps on Snow Leopard.)
 
     We recommend using a MacTeX distribution: https://www.tug.org/mactex/
+
+    You can install it using Cask:
+
+    brew cask install mactex
     EOS
   when "pip" then <<-EOS.undent
     Homebrew provides pip via: `brew install python`. However you will then
-    have two Pythons installed on your Mac, so alternatively you can:
-        sudo easy_install pip
+    have two Pythons installed on your Mac, so alternatively you can install
+    pip via the instructions at:
+
+      https://pip.readthedocs.org/en/stable/installing/#install-pip
     EOS
   when "pil" then <<-EOS.undent
     Instead of PIL, consider `pip install pillow` or `brew install Homebrew/python/pillow`.
@@ -80,6 +86,19 @@ def blacklisted?(name)
 
     A binary installer is available:
       https://www.haskell.org/platform/mac.html
+    EOS
+  when "mysqldump-secure" then <<-EOS.undent
+    The creator of mysqldump-secure tried to game our popularity metrics.
+    EOS
+  when "ngrok" then <<-EOS.undent
+    Upstream sunsetted 1.x in March 2016 and 2.x is not open-source.
+
+    If you wish to use the 2.x release you can install it
+    either via Homebrew:
+      brew install homebrew/binary/ngrok2
+
+    Or via the Cask:
+      brew cask install ngrok
     EOS
   end
 end
